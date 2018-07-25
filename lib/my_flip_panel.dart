@@ -18,7 +18,7 @@ typedef Widget StreamItemBuilder<T>(BuildContext, T);
 
 enum FlipDirection { up, down, none }
 
-enum ChangeRequested { initial, previous, same, next }
+enum LastFlip { none, previous, same, next }
 
 const double _kFastThreshold = 2500.0;
 
@@ -144,14 +144,14 @@ class _FlipPanelState<T> extends State<FlipPanel>
   bool _isManuallyControlled;
   FlipDirection _direction;
 
-  Widget _child1, _child2;
+  List<Widget> widgets;
+
+  Widget _prevChild, _currentChild, _nextChild;
   Widget _upperChild1, _upperChild2;
   Widget _lowerChild1, _lowerChild2;
 
   double _dragExtent = 0.0;
   bool _dragging = false;
-
-  ChangeRequested _changeRequested = ChangeRequested.initial;
 
   @override
   void initState() {
@@ -163,6 +163,21 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _loop = 0;
     _isManuallyControlled = widget.isManuallyControlled;
     _direction = widget.direction;
+
+    widgets = List.generate(10, (index) => Container(
+      color: Colors.black,
+      padding: const EdgeInsets.symmetric(horizontal: 60.0),
+      child: Text(
+        '${index}',
+        style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 400.0,
+            color: Colors.white),
+      ),
+    ));
+
+    _upperChild1 = makeUpperClip(widgets[0]);
+    _lowerChild1 = makeLowerClip(widgets[0]);
 
     if (!_isManuallyControlled) {
       _controller =
@@ -185,63 +200,27 @@ class _FlipPanelState<T> extends State<FlipPanel>
       _animation =
           Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
     } else {
-      _controller = new AnimationController(
-          duration: widget.duration, vsync: this)
-        ..addStatusListener((status) {
-          if (status == AnimationStatus.completed && !_dragging) {
-            _isReversePhase = true;
-            _controller.reverse();
-            print("Completed");
-          }
-          if (status == AnimationStatus.dismissed) {
-            //_currentValue = _nextValue;
-            _running = false;
-            print("Dissmissed");
-          }
-        })
-        ..addListener(() {
-          setState(() {
-            _running = true;
-          });
-        });
+      _controller =
+          new AnimationController(duration: widget.duration, vsync: this)
+            ..addStatusListener((status) {
+              if (status == AnimationStatus.completed && !_dragging) {
+                _isReversePhase = true;
+                _controller.reverse();
+                print("Completed - CurrentIndex: ${_currentIndex}");
+              }
+              if (status == AnimationStatus.dismissed) {
+                //_currentValue = _nextValue;
+                _running = false;
+                print("Dissmissed");
+              }
+            })
+            ..addListener(() {
+              setState(() {
+                _running = true;
+              });
+            });
       _animation =
           Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
-    }
-
-    if (widget.period != null) {
-      _timer = Timer.periodic(widget.period, (_) {
-        if (widget.loop < 0 || _loop < widget.loop) {
-          if (_currentIndex + 1 == widget.itemsCount - 2) {
-            _loop++;
-          }
-          _currentIndex = (_currentIndex + 1) % widget.itemsCount;
-          _child1 = null;
-          _isReversePhase = false;
-          _controller.forward();
-        } else {
-          _timer.cancel();
-          _currentIndex = (_currentIndex + 1) % widget.itemsCount;
-          setState(() {
-            _running = false;
-          });
-        }
-      });
-    }
-
-    if (_isStreamMode) {
-      _currentValue = widget.initValue;
-      _subscription = widget.itemStream.distinct().listen((value) {
-        if (_currentValue == null) {
-          _currentValue = value;
-        } else if (value != _currentValue) {
-          _nextValue = value;
-          _child1 = null;
-          _isReversePhase = false;
-          _controller.forward();
-        }
-      });
-    } else if (widget.loop < 0 || _loop < widget.loop) {
-      //_controller.forward();
     }
   }
 
@@ -260,65 +239,56 @@ class _FlipPanelState<T> extends State<FlipPanel>
     return _buildPanel();
   }
 
-  void _buildChildWidgetsIfNeed(BuildContext context) {
-    Widget makeUpperClip(Widget widget) {
-      return ClipRect(
-        child: Align(
-          alignment: Alignment.topCenter,
-          heightFactor: 0.5,
-          child: widget,
-        ),
-      );
-    }
+  Widget makeUpperClip(Widget widget) {
+    return ClipRect(
+      child: Align(
+        alignment: Alignment.topCenter,
+        heightFactor: 0.5,
+        child: widget,
+      ),
+    );
+  }
 
-    Widget makeLowerClip(Widget widget) {
-      return ClipRect(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          heightFactor: 0.5,
-          child: widget,
-        ),
-      );
-    }
+  Widget makeLowerClip(Widget widget) {
+    return ClipRect(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 0.5,
+        child: widget,
+      ),
+    );
+  }
+
+  void _buildChildWidgetsIfNeed(BuildContext context) {
 
     if (_running) {
-      if (_child1 == null) {
-        print("Running: Child1 null");
-        _child1 = _child2 != null
-            ? _child2
-            : _isStreamMode
-                ? widget.streamItemBuilder(context, _currentValue)
-                : widget.indexedItemBuilder(
-                    context, _currentIndex % widget.itemsCount);
-        _child2 = null;
-        _upperChild1 =
-            _upperChild2 != null ? _upperChild2 : makeUpperClip(_child1);
-        _lowerChild1 =
-            _lowerChild2 != null ? _lowerChild2 : makeLowerClip(_child1);
+      if (_direction == FlipDirection.up) {
+        if (_currentChild == null) {
+          print("Running: CurrentChild null");
+          _currentChild = widgets[_currentIndex];
+          _nextChild = widgets[_currentIndex + 1];
+          _upperChild1 = makeUpperClip(_currentChild);
+          _lowerChild1 = makeLowerClip(_currentChild);
+          _upperChild2 = makeUpperClip(_nextChild);
+          _lowerChild2 = makeLowerClip(_nextChild);
+        }
       }
-      if (_child2 == null) {
-        print("Running: Child2 null");
-        _child2 = _isStreamMode
-            ? widget.streamItemBuilder(context, _nextValue)
-            : widget.indexedItemBuilder(
-                context, (_currentIndex + 1) % widget.itemsCount);
-        _upperChild2 = makeUpperClip(_child2);
-        _lowerChild2 = makeLowerClip(_child2);
+      if (_direction == FlipDirection.down) {
+        if (_currentChild == null && _currentIndex > 0) {
+          print("Running: CurrentChild null");
+          _currentChild = widgets[_currentIndex];
+          _prevChild = widgets[_currentIndex - 1];
+          _upperChild1 = makeUpperClip(_currentChild);
+          _lowerChild1 = makeLowerClip(_currentChild);
+          _upperChild2 = makeUpperClip(_prevChild);
+          _lowerChild2 = makeLowerClip(_prevChild);
+        }
       }
     } else {
       print("Not Running");
-      if (_changeRequested != ChangeRequested.same) {// || _changeRequested == ChangeRequested.initial) {
-        _child1 = _child2 != null
-            ? _child2
-            : _isStreamMode
-            ? widget.streamItemBuilder(context, _currentValue)
-            : widget.indexedItemBuilder(
-            context, _currentIndex % widget.itemsCount);
-        _upperChild1 =
-        _upperChild2 != null ? _upperChild2 : makeUpperClip(_child1);
-        _lowerChild1 =
-        _lowerChild2 != null ? _lowerChild2 : makeLowerClip(_child1);
-      }
+      _currentChild = widgets[_currentIndex];
+      _upperChild1 = makeUpperClip(_currentChild);
+      _lowerChild1 = makeLowerClip(_currentChild);
     }
   }
 
@@ -338,24 +308,19 @@ class _FlipPanelState<T> extends State<FlipPanel>
     final double delta = details.primaryDelta;
     _dragExtent += delta;
     setState(() {
-      FlipDirection _localDirection = _dragExtent < 0 ? FlipDirection.up : FlipDirection.down;
+      FlipDirection _localDirection =
+          _dragExtent < 0 ? FlipDirection.up : FlipDirection.down;
+      //print("${_localDirection}");
       if (_localDirection != _direction) {
         _direction = _localDirection;
-        if (_changeRequested != ChangeRequested.initial && _changeRequested != ChangeRequested.same) {
-          if (_direction == FlipDirection.up) {
-            _currentIndex++;
-          } else {
-            _currentIndex--;
-          }
-          _child1 = null;
-        }
+        _currentChild = null;
       }
       if (_direction == FlipDirection.down && _currentIndex == 0) {
         _dragExtent = 0.0;
       }
       if (_dragExtent.abs() < 200.0) {
         _controller.value = (_dragExtent / 200.0).abs();
-      } else  {
+      } else {
         _controller.value = ((400.0 - _dragExtent.abs()) / 200.0).abs();
       }
       _isReversePhase = (_dragExtent / 200.0).abs() > 1.0 ? true : false;
@@ -364,34 +329,40 @@ class _FlipPanelState<T> extends State<FlipPanel>
 
   void _handleDragEnd(DragEndDetails details) {
     _dragging = false;
+
+    if (_dragExtent == 0.0) return;
+
     final double velocity = details.primaryVelocity;
     final bool fast = velocity.abs() > _kFastThreshold;
+
     if (fast) {
       _controller.animateTo(1.0);
-      _changeRequested = _direction == FlipDirection.up ? ChangeRequested.next : ChangeRequested.previous;
+      _currentIndex = _direction == FlipDirection.up
+          ? _currentIndex + 1
+          : _currentIndex - 1;
       print("fast");
     } else {
-      if (_dragExtent.abs() < 200.0) {
-        _changeRequested = ChangeRequested.same;
-      } else  {
-        _changeRequested = _direction == FlipDirection.up ? ChangeRequested.next : ChangeRequested.previous;
+      if (_dragExtent.abs() > 200.0) {
+        _currentIndex = _direction == FlipDirection.up
+            ? _currentIndex + 1
+            : _currentIndex - 1;
       }
       _controller.animateTo(0.0);
       print("not fast");
     }
     print("Drag end");
-    print("${_currentIndex}");
+    print("DragEnd ${_currentIndex}");
   }
 
   Widget _buildUpperFlipPanel() => _direction == FlipDirection.up
       ? Stack(
           children: [
             Transform(
-                  alignment: Alignment.bottomCenter,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, _perspective)
-                    ..rotateX(_zeroAngle),
-                  child: _upperChild1),
+                alignment: Alignment.bottomCenter,
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, _perspective)
+                  ..rotateX(_zeroAngle),
+                child: _upperChild1),
             Transform(
               alignment: Alignment.bottomCenter,
               transform: Matrix4.identity()
@@ -404,11 +375,11 @@ class _FlipPanelState<T> extends State<FlipPanel>
       : Stack(
           children: [
             Transform(
-                  alignment: Alignment.bottomCenter,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, _perspective)
-                    ..rotateX(_zeroAngle),
-                  child: _upperChild2),
+                alignment: Alignment.bottomCenter,
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, _perspective)
+                  ..rotateX(_zeroAngle),
+                child: _upperChild2),
             Transform(
               alignment: Alignment.bottomCenter,
               transform: Matrix4.identity()
