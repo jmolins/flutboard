@@ -164,17 +164,19 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _isManuallyControlled = widget.isManuallyControlled;
     _direction = widget.direction;
 
-    widgets = List.generate(10, (index) => Container(
-      color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 60.0),
-      child: Text(
-        '${index}',
-        style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 400.0,
-            color: Colors.white),
-      ),
-    ));
+    widgets = List.generate(
+        10,
+        (index) => Container(
+              color: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 60.0),
+              child: Text(
+                '${index}',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 400.0,
+                    color: Colors.white),
+              ),
+            ));
 
     _upperChild1 = makeUpperClip(widgets[0]);
     _lowerChild1 = makeLowerClip(widgets[0]);
@@ -206,12 +208,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
               if (status == AnimationStatus.completed && !_dragging) {
                 _isReversePhase = true;
                 _controller.reverse();
-                print("Completed - CurrentIndex: ${_currentIndex}");
               }
               if (status == AnimationStatus.dismissed) {
                 //_currentValue = _nextValue;
                 _running = false;
-                print("Dissmissed");
               }
             })
             ..addListener(() {
@@ -260,11 +260,9 @@ class _FlipPanelState<T> extends State<FlipPanel>
   }
 
   void _buildChildWidgetsIfNeed(BuildContext context) {
-
     if (_running) {
       if (_direction == FlipDirection.up) {
         if (_currentChild == null) {
-          print("Running: CurrentChild null");
           _currentChild = widgets[_currentIndex];
           _nextChild = widgets[_currentIndex + 1];
           _upperChild1 = makeUpperClip(_currentChild);
@@ -275,7 +273,6 @@ class _FlipPanelState<T> extends State<FlipPanel>
       }
       if (_direction == FlipDirection.down) {
         if (_currentChild == null && _currentIndex > 0) {
-          print("Running: CurrentChild null");
           _currentChild = widgets[_currentIndex];
           _prevChild = widgets[_currentIndex - 1];
           _upperChild1 = makeUpperClip(_currentChild);
@@ -285,7 +282,6 @@ class _FlipPanelState<T> extends State<FlipPanel>
         }
       }
     } else {
-      print("Not Running");
       _currentChild = widgets[_currentIndex];
       _upperChild1 = makeUpperClip(_currentChild);
       _lowerChild1 = makeLowerClip(_currentChild);
@@ -297,24 +293,22 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _running = true;
     _direction = FlipDirection.none;
     _dragExtent = _controller.value * _dragExtent.sign;
-    //_isReversePhase = false;
     if (_controller.isAnimating) {
       _controller.stop();
     }
-    print("Drag started");
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
     final double delta = details.primaryDelta;
     _dragExtent += delta;
     setState(() {
-      FlipDirection _localDirection =
-          _dragExtent < 0 ? FlipDirection.up : FlipDirection.down;
-      //print("${_localDirection}");
-      if (_localDirection != _direction) {
-        _direction = _localDirection;
+      if (_direction == FlipDirection.none) {
+        _direction = _dragExtent < 0 ? FlipDirection.up : FlipDirection.down;
         _currentChild = null;
       }
+      _dragExtent = _direction == FlipDirection.up
+          ? _dragExtent.clamp(-10000.0, 0.0)
+          : _dragExtent.clamp(0.0, double.nan);
       if (_direction == FlipDirection.down && _currentIndex == 0) {
         _dragExtent = 0.0;
       }
@@ -340,7 +334,6 @@ class _FlipPanelState<T> extends State<FlipPanel>
       _currentIndex = _direction == FlipDirection.up
           ? _currentIndex + 1
           : _currentIndex - 1;
-      print("fast");
     } else {
       if (_dragExtent.abs() > 200.0) {
         _currentIndex = _direction == FlipDirection.up
@@ -348,10 +341,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
             : _currentIndex - 1;
       }
       _controller.animateTo(0.0);
-      print("not fast");
     }
-    print("Drag end");
-    print("DragEnd ${_currentIndex}");
   }
 
   Widget _buildUpperFlipPanel() => _direction == FlipDirection.up
