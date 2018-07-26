@@ -22,24 +22,23 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('FlipPanel'),
-      ),
-      body: FlipPanel.manual(
-        itemBuilder: (context, index) => Container(
-          color: Colors.black,
-          padding: const EdgeInsets.symmetric(horizontal: 60.0),
-          child: Text(
-            '${digits[index]}',
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 400.0,
-                color: Colors.white),
+    return SafeArea(
+      child: Scaffold(
+        body: FlipPanel.manual(
+          itemBuilder: (context, index) => Container(
+            color: Colors.black,
+            padding: const EdgeInsets.symmetric(horizontal: 60.0),
+            child: Text(
+              '${digits[index]}',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 400.0,
+                  color: Colors.white),
+            ),
           ),
+          itemsCount: digits.length,
+          loop: 1,
         ),
-        itemsCount: digits.length,
-        loop: 1,
       ),
     );
   }

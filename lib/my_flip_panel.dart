@@ -109,7 +109,7 @@ class FlipPanel<T> extends StatefulWidget {
     this.duration = const Duration(milliseconds: 100),
     this.loop = 1,
     this.startIndex = 0,
-    this.spacing = 0.5,
+    this.spacing = 0.0,
     this.direction = FlipDirection.up,
   })  : assert(itemBuilder != null),
         assert(itemsCount != null),
@@ -143,7 +143,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
   bool _isManuallyControlled;
   FlipDirection _direction;
 
-  List<Widget> widgets;
+  List<Widget> _widgets;
 
   Widget _prevChild, _currentChild, _nextChild;
   Widget _upperChild1, _upperChild2;
@@ -170,22 +170,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _isManuallyControlled = widget.isManuallyControlled;
     _direction = widget.direction;
 
-    widgets = List.generate(
-        10,
-        (index) => Container(
-              color: Colors.black,
-              padding: const EdgeInsets.symmetric(horizontal: 60.0),
-              child: Text(
-                '${index}',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 400.0,
-                    color: Colors.white),
-              ),
-            ));
-
-    _upperChild1 = makeUpperClip(widgets[0]);
-    _lowerChild1 = makeLowerClip(widgets[0]);
+    WidgetsBinding.instance.addPostFrameCallback((_) {});
 
     if (!_isManuallyControlled) {
       _controller =
@@ -271,11 +256,32 @@ class _FlipPanelState<T> extends State<FlipPanel>
   }
 
   void _buildChildWidgetsIfNeed(BuildContext context) {
+    if (_widgets == null) {
+      _widgets = List.generate(
+          10,
+          (index) => Container(
+                color: Colors.black,
+                //padding: const EdgeInsets.symmetric(horizontal: 60.0),
+                height: MediaQuery.of(context).size.height - 24,
+                width: MediaQuery.of(context).size.width,
+                child: Center(
+                  child: Text(
+                    '${index}',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 400.0,
+                        color: Colors.white),
+                  ),
+                ),
+              ));
+      _upperChild1 = makeUpperClip(_widgets[0]);
+      _lowerChild1 = makeLowerClip(_widgets[0]);
+    }
     if (_running) {
       if (_direction == FlipDirection.up) {
         if (_currentChild == null && _currentIndex < 9) {
-          _currentChild = widgets[_currentIndex];
-          _nextChild = widgets[_currentIndex + 1];
+          _currentChild = _widgets[_currentIndex];
+          _nextChild = _widgets[_currentIndex + 1];
           _upperChild1 = makeUpperClip(_currentChild);
           _lowerChild1 = makeLowerClip(_currentChild);
           _upperChild2 = makeUpperClip(_nextChild);
@@ -284,8 +290,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
       }
       if (_direction == FlipDirection.down) {
         if (_currentChild == null && _currentIndex > 0) {
-          _currentChild = widgets[_currentIndex];
-          _prevChild = widgets[_currentIndex - 1];
+          _currentChild = _widgets[_currentIndex];
+          _prevChild = _widgets[_currentIndex - 1];
           _upperChild1 = makeUpperClip(_currentChild);
           _lowerChild1 = makeLowerClip(_currentChild);
           _upperChild2 = makeUpperClip(_prevChild);
@@ -293,7 +299,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
         }
       }
     } else {
-      _currentChild = widgets[_currentIndex];
+      _currentChild = _widgets[_currentIndex];
       _upperChild1 = makeUpperClip(_currentChild);
       _lowerChild1 = makeLowerClip(_currentChild);
     }
@@ -448,7 +454,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
   Widget _buildPanel() {
     Widget content = _running
         ? Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
