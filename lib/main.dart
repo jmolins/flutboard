@@ -27,13 +27,16 @@ class HomePage extends StatelessWidget {
         body: FlipPanel.manual(
           itemBuilder: (context, index) => Container(
             color: Colors.black,
-            padding: const EdgeInsets.symmetric(horizontal: 60.0),
-            child: Text(
-              '${digits[index]}',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 400.0,
-                  color: Colors.white),
+            height: MediaQuery.of(context).size.height - 24,
+            width: MediaQuery.of(context).size.width,
+            child: Center(
+              child: Text(
+                '${index}',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 400.0,
+                    color: Colors.white),
+              ),
             ),
           ),
           itemsCount: digits.length,

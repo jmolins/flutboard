@@ -260,21 +260,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
   void _buildChildWidgetsIfNeed(BuildContext context) {
     if (_widgets == null) {
       _widgets = List.generate(
-          10,
-          (index) => Container(
-                color: Colors.black,
-                height: MediaQuery.of(context).size.height - 24,
-                width: MediaQuery.of(context).size.width,
-                child: Center(
-                  child: Text(
-                    '${index}',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 400.0,
-                        color: Colors.white),
-                  ),
-                ),
-              ));
+          10, (index) => widget.indexedItemBuilder(context, index));
       List<Color> colors = [
         Colors.red,
         Colors.blue,
