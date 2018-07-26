@@ -218,9 +218,9 @@ class _FlipPanelState<T> extends State<FlipPanel>
               if (status == AnimationStatus.dismissed) {
                 //_currentValue = _nextValue;
                 _running = false;
-                _currentIndex = _lastFlip == LastFlip.next
+                _currentIndex = _lastFlip == LastFlip.next && _currentIndex < 9
                     ? _currentIndex + 1
-                    : _lastFlip == LastFlip.previous
+                    : _lastFlip == LastFlip.previous && _currentIndex > 0
                         ? _currentIndex - 1
                         : _currentIndex;
               }
@@ -273,7 +273,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
   void _buildChildWidgetsIfNeed(BuildContext context) {
     if (_running) {
       if (_direction == FlipDirection.up) {
-        if (_currentChild == null) {
+        if (_currentChild == null && _currentIndex < 9) {
           _currentChild = widgets[_currentIndex];
           _nextChild = widgets[_currentIndex + 1];
           _upperChild1 = makeUpperClip(_currentChild);
@@ -333,7 +333,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
         _dragExtent = 0.0;
       }
       // Temporary to avoid error beyond max. items of widgets list
-      if (_direction == FlipDirection.up && _currentIndex == 8) {
+      if (_direction == FlipDirection.up && _currentIndex == 9) {
         _dragExtent = 0.0;
       }
       if (_dragExtent.abs() < _flipExtent) {
