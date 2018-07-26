@@ -144,6 +144,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
   FlipDirection _direction;
 
   List<Widget> _widgets;
+  List<Widget> _widgets2;
 
   Widget _prevChild, _currentChild, _nextChild;
   Widget _upperChild1, _upperChild2;
@@ -203,7 +204,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
               if (status == AnimationStatus.dismissed) {
                 //_currentValue = _nextValue;
                 _running = false;
-                _currentIndex = _lastFlip == LastFlip.next && _currentIndex < 9
+                _currentIndex = _lastFlip == LastFlip.next &&
+                        _currentIndex < _widgets.length - 1
                     ? _currentIndex + 1
                     : _lastFlip == LastFlip.previous && _currentIndex > 0
                         ? _currentIndex - 1
@@ -257,11 +259,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
 
   void _buildChildWidgetsIfNeed(BuildContext context) {
     if (_widgets == null) {
-      _widgets = List.generate(
+      _widgets2 = List.generate(
           10,
           (index) => Container(
                 color: Colors.black,
-                //padding: const EdgeInsets.symmetric(horizontal: 60.0),
                 height: MediaQuery.of(context).size.height - 24,
                 width: MediaQuery.of(context).size.width,
                 child: Center(
@@ -274,12 +275,26 @@ class _FlipPanelState<T> extends State<FlipPanel>
                   ),
                 ),
               ));
+      List<Color> colors = [
+        Colors.red,
+        Colors.blue,
+        Colors.yellow,
+        Colors.green,
+        Colors.amber
+      ];
+      _widgets = colors
+          .map((color) => Container(
+                color: color,
+                height: MediaQuery.of(context).size.height - 24,
+                width: MediaQuery.of(context).size.width,
+              ))
+          .toList();
       _upperChild1 = makeUpperClip(_widgets[0]);
       _lowerChild1 = makeLowerClip(_widgets[0]);
     }
     if (_running) {
       if (_direction == FlipDirection.up) {
-        if (_currentChild == null && _currentIndex < 9) {
+        if (_currentChild == null && _currentIndex < _widgets.length - 1) {
           _currentChild = _widgets[_currentIndex];
           _nextChild = _widgets[_currentIndex + 1];
           _upperChild1 = makeUpperClip(_currentChild);
@@ -317,7 +332,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _flipExtent = (localPosition.dy - _halfFlipPanel)
         .abs()
         .clamp(_halfFlipPanel / 2, double.infinity);
-
+    print("_halfFlipPanel: ${_halfFlipPanel}");
+    print("_flipExtent: ${_flipExtent}");
     if (_controller.isAnimating) {
       _controller.stop();
     }
@@ -339,7 +355,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
         _dragExtent = 0.0;
       }
       // Temporary to avoid error beyond max. items of widgets list
-      if (_direction == FlipDirection.up && _currentIndex == 9) {
+      if (_direction == FlipDirection.up &&
+          _currentIndex == _widgets.length - 1) {
         _dragExtent = 0.0;
       }
       if (_dragExtent.abs() < _flipExtent) {
