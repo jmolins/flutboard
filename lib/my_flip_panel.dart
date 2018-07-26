@@ -134,7 +134,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
   bool _isReversePhase;
   bool _isStreamMode;
   bool _running;
-  final _perspective = 0.003;
+  final _perspective = 0.0003;
   final _zeroAngle =
       0.0001; // There's something wrong in the perspective transform, I use a very small value instead of zero to temporarily get it around.
   T _currentValue, _nextValue;
@@ -259,7 +259,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
 
   void _buildChildWidgetsIfNeed(BuildContext context) {
     if (_widgets == null) {
-      _widgets2 = List.generate(
+      _widgets = List.generate(
           10,
           (index) => Container(
                 color: Colors.black,
@@ -282,7 +282,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
         Colors.green,
         Colors.amber
       ];
-      _widgets = colors
+      _widgets2 = colors
           .map((color) => Container(
                 color: color,
                 height: MediaQuery.of(context).size.height - 24,
