@@ -18,9 +18,9 @@ typedef Widget StreamItemBuilder<T>(BuildContext, T);
 
 enum FlipDirection { up, down, none }
 
-enum LastFlip { none, previous, same, next }
+enum LastFlip { none, previous, next }
 
-const double _kFastThreshold = 2500.0;
+const double _kFastThreshold = 800.0;
 
 class FlipPanel<T> extends StatefulWidget {
   final IndexedItemBuilder indexedItemBuilder;
@@ -106,7 +106,7 @@ class FlipPanel<T> extends StatefulWidget {
     Key key,
     @required IndexedItemBuilder itemBuilder,
     @required this.itemsCount,
-    this.duration = const Duration(milliseconds: 500),
+    this.duration = const Duration(milliseconds: 100),
     this.loop = 1,
     this.startIndex = 0,
     this.spacing = 0.5,
@@ -137,7 +137,6 @@ class _FlipPanelState<T> extends State<FlipPanel>
   final _perspective = 0.003;
   final _zeroAngle =
       0.0001; // There's something wrong in the perspective transform, I use a very small value instead of zero to temporarily get it around.
-  int _loop;
   T _currentValue, _nextValue;
   Timer _timer;
   StreamSubscription<T> _subscription;
@@ -153,6 +152,14 @@ class _FlipPanelState<T> extends State<FlipPanel>
   double _dragExtent = 0.0;
   bool _dragging = false;
 
+  // _flipExtent is the distance needed for the manual flip.
+  // The flip distance is the distance from the drag start point to the center
+  // of the flip panel, with a minimum distance of a quarter of the panel
+  // height
+  double _flipExtent = 200.0;
+
+  LastFlip _lastFlip = LastFlip.none;
+
   @override
   void initState() {
     super.initState();
@@ -160,7 +167,6 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _isStreamMode = widget.itemStream != null;
     _isReversePhase = false;
     _running = false;
-    _loop = 0;
     _isManuallyControlled = widget.isManuallyControlled;
     _direction = widget.direction;
 
@@ -212,6 +218,11 @@ class _FlipPanelState<T> extends State<FlipPanel>
               if (status == AnimationStatus.dismissed) {
                 //_currentValue = _nextValue;
                 _running = false;
+                _currentIndex = _lastFlip == LastFlip.next
+                    ? _currentIndex + 1
+                    : _lastFlip == LastFlip.previous
+                        ? _currentIndex - 1
+                        : _currentIndex;
               }
             })
             ..addListener(() {
@@ -293,6 +304,14 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _running = true;
     _direction = FlipDirection.none;
     _dragExtent = _controller.value * _dragExtent.sign;
+
+    double _halfFlipPanel = context.size.height / 2;
+    RenderBox referenceBox = context.findRenderObject();
+    Offset localPosition = referenceBox.globalToLocal(details.globalPosition);
+    _flipExtent = (localPosition.dy - _halfFlipPanel)
+        .abs()
+        .clamp(_halfFlipPanel / 2, double.infinity);
+
     if (_controller.isAnimating) {
       _controller.stop();
     }
@@ -306,18 +325,24 @@ class _FlipPanelState<T> extends State<FlipPanel>
         _direction = _dragExtent < 0 ? FlipDirection.up : FlipDirection.down;
         _currentChild = null;
       }
+      // Need to add 0.01 to correct an artifact appearing when campling to limit
       _dragExtent = _direction == FlipDirection.up
-          ? _dragExtent.clamp(-10000.0, 0.0)
-          : _dragExtent.clamp(0.0, double.nan);
+          ? _dragExtent.clamp(-(_flipExtent * 2 + 0.01), 0.0)
+          : _dragExtent.clamp(0.0, _flipExtent * 2 - 0.01);
       if (_direction == FlipDirection.down && _currentIndex == 0) {
         _dragExtent = 0.0;
       }
-      if (_dragExtent.abs() < 200.0) {
-        _controller.value = (_dragExtent / 200.0).abs();
-      } else {
-        _controller.value = ((400.0 - _dragExtent.abs()) / 200.0).abs();
+      // Temporary to avoid error beyond max. items of widgets list
+      if (_direction == FlipDirection.up && _currentIndex == 8) {
+        _dragExtent = 0.0;
       }
-      _isReversePhase = (_dragExtent / 200.0).abs() > 1.0 ? true : false;
+      if (_dragExtent.abs() < _flipExtent) {
+        _controller.value = (_dragExtent / _flipExtent).abs();
+      } else {
+        _controller.value =
+            (((_flipExtent * 2) - _dragExtent.abs()) / _flipExtent).abs();
+      }
+      _isReversePhase = (_dragExtent / _flipExtent).abs() > 1.0 ? true : false;
     });
   }
 
@@ -330,15 +355,19 @@ class _FlipPanelState<T> extends State<FlipPanel>
     final bool fast = velocity.abs() > _kFastThreshold;
 
     if (fast) {
-      _controller.animateTo(1.0);
-      _currentIndex = _direction == FlipDirection.up
-          ? _currentIndex + 1
-          : _currentIndex - 1;
+      if (_dragExtent.abs() > _flipExtent) {
+        _controller.animateTo(0.0);
+      } else {
+        _controller.animateTo(1.0);
+      }
+      _lastFlip =
+          _direction == FlipDirection.up ? LastFlip.next : LastFlip.previous;
     } else {
-      if (_dragExtent.abs() > 200.0) {
-        _currentIndex = _direction == FlipDirection.up
-            ? _currentIndex + 1
-            : _currentIndex - 1;
+      if (_dragExtent.abs() > _flipExtent) {
+        _lastFlip =
+            _direction == FlipDirection.up ? LastFlip.next : LastFlip.previous;
+      } else {
+        _lastFlip = LastFlip.none;
       }
       _controller.animateTo(0.0);
     }
