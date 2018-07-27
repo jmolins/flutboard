@@ -36,6 +36,7 @@ class FlipPanel<T> extends StatefulWidget {
   final FlipDirection direction;
 
   final bool isManuallyControlled;
+  final List<T> items;
 
   FlipPanel({
     Key key,
@@ -51,75 +52,28 @@ class FlipPanel<T> extends StatefulWidget {
     this.spacing,
     this.direction,
     this.isManuallyControlled,
+    this.items,
   }) : super(key: key);
 
-  /// Create a flip panel from iterable source
-  /// [itemBuilder] is called periodically in each time of [period]
-  /// The animation is looped in [loop] times before finished.
-  /// Setting [loop] to -1 makes flip animation run forever.
-  /// The [period] should be two times greater than [duration] of flip animation,
-  /// if not the animation becomes jerky/stuttery.
-  FlipPanel.builder({
+  /// Create a flip panel to be fliped manually
+  FlipPanel.fromItems({
     Key key,
-    @required IndexedItemBuilder itemBuilder,
-    @required this.itemsCount,
-    @required this.period,
-    this.duration = const Duration(milliseconds: 500),
-    this.loop = 1,
-    this.startIndex = 0,
-    this.spacing = 0.5,
-    this.direction = FlipDirection.up,
-  })  : assert(itemBuilder != null),
-        assert(itemsCount != null),
-        assert(startIndex < itemsCount),
-        assert(period == null ||
-            period.inMilliseconds >= 2 * duration.inMilliseconds),
-        indexedItemBuilder = itemBuilder,
-        streamItemBuilder = null,
-        itemStream = null,
-        initValue = null,
-        isManuallyControlled = false,
-        super(key: key);
-
-  /// Create a flip panel from stream source
-  /// [itemBuilder] is called whenever a new value is emitted from [itemStream]
-  FlipPanel.stream({
-    Key key,
-    @required this.itemStream,
     @required StreamItemBuilder<T> itemBuilder,
-    this.initValue,
-    this.duration = const Duration(milliseconds: 500),
-    this.spacing = 0.5,
-    this.direction = FlipDirection.up,
-  })  : assert(itemStream != null),
+    @required this.items,
+    this.duration = const Duration(milliseconds: 100),
+  })  : assert(itemBuilder != null),
+        assert(items != null),
+        isManuallyControlled = true,
         indexedItemBuilder = null,
         streamItemBuilder = itemBuilder,
-        itemsCount = 0,
+        itemStream = null,
         period = null,
         loop = 0,
         startIndex = 0,
-        isManuallyControlled = false,
-        super(key: key);
-
-  /// Create a flip panel to be fliped manually
-  FlipPanel.manual({
-    Key key,
-    @required IndexedItemBuilder itemBuilder,
-    @required this.itemsCount,
-    this.duration = const Duration(milliseconds: 100),
-    this.loop = 1,
-    this.startIndex = 0,
-    this.spacing = 0.0,
-    this.direction = FlipDirection.up,
-  })  : assert(itemBuilder != null),
-        assert(itemsCount != null),
-        assert(startIndex < itemsCount),
-        isManuallyControlled = true,
-        indexedItemBuilder = itemBuilder,
-        streamItemBuilder = null,
-        period = null,
-        itemStream = null,
         initValue = null,
+        direction = FlipDirection.up,
+        spacing = 0.0,
+        itemsCount = null,
         super(key: key);
 
   @override
@@ -143,8 +97,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
   bool _isManuallyControlled;
   FlipDirection _direction;
 
-  List<Widget> _widgets;
-  List<Widget> _widgets2;
+  List<Widget> widgets;
+  List<T> _items;
 
   Widget _prevChild, _currentChild, _nextChild;
   Widget _upperChild1, _upperChild2;
@@ -170,6 +124,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _running = false;
     _isManuallyControlled = widget.isManuallyControlled;
     _direction = widget.direction;
+    _items = widget.items;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {});
 
@@ -205,7 +160,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
                 //_currentValue = _nextValue;
                 _running = false;
                 _currentIndex = _lastFlip == LastFlip.next &&
-                        _currentIndex < _widgets.length - 1
+                        _currentIndex < widgets.length - 1
                     ? _currentIndex + 1
                     : _lastFlip == LastFlip.previous && _currentIndex > 0
                         ? _currentIndex - 1
@@ -257,32 +212,23 @@ class _FlipPanelState<T> extends State<FlipPanel>
     );
   }
 
-  void _buildChildWidgetsIfNeed(BuildContext context) {
-    if (_widgets == null) {
-      _widgets = List.generate(
-          10, (index) => widget.indexedItemBuilder(context, index));
-      List<Color> colors = [
-        Colors.red,
-        Colors.blue,
-        Colors.yellow,
-        Colors.green,
-        Colors.amber
-      ];
-      _widgets2 = colors
-          .map((color) => Container(
-                color: color,
-                height: MediaQuery.of(context).size.height - 24,
-                width: MediaQuery.of(context).size.width,
-              ))
+  void _buildWidgetsListIfNeeded(BuildContext context) {
+    if (widgets == null) {
+      widgets = _items
+          .map((article) => widget.streamItemBuilder(context, article))
           .toList();
-      _upperChild1 = makeUpperClip(_widgets[0]);
-      _lowerChild1 = makeLowerClip(_widgets[0]);
+      _upperChild1 = makeUpperClip(widgets[0]);
+      _lowerChild1 = makeLowerClip(widgets[0]);
     }
+  }
+
+  void _buildChildWidgetsIfNeed(BuildContext context) {
+    _buildWidgetsListIfNeeded(context);
     if (_running) {
       if (_direction == FlipDirection.up) {
-        if (_currentChild == null && _currentIndex < _widgets.length - 1) {
-          _currentChild = _widgets[_currentIndex];
-          _nextChild = _widgets[_currentIndex + 1];
+        if (_currentChild == null && _currentIndex < widgets.length - 1) {
+          _currentChild = widgets[_currentIndex];
+          _nextChild = widgets[_currentIndex + 1];
           _upperChild1 = makeUpperClip(_currentChild);
           _lowerChild1 = makeLowerClip(_currentChild);
           _upperChild2 = makeUpperClip(_nextChild);
@@ -291,8 +237,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
       }
       if (_direction == FlipDirection.down) {
         if (_currentChild == null && _currentIndex > 0) {
-          _currentChild = _widgets[_currentIndex];
-          _prevChild = _widgets[_currentIndex - 1];
+          _currentChild = widgets[_currentIndex];
+          _prevChild = widgets[_currentIndex - 1];
           _upperChild1 = makeUpperClip(_currentChild);
           _lowerChild1 = makeLowerClip(_currentChild);
           _upperChild2 = makeUpperClip(_prevChild);
@@ -300,7 +246,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
         }
       }
     } else {
-      _currentChild = _widgets[_currentIndex];
+      _currentChild = widgets[_currentIndex];
       _upperChild1 = makeUpperClip(_currentChild);
       _lowerChild1 = makeLowerClip(_currentChild);
     }
@@ -318,8 +264,6 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _flipExtent = (localPosition.dy - _halfFlipPanel)
         .abs()
         .clamp(_halfFlipPanel / 2, double.infinity);
-    print("_halfFlipPanel: ${_halfFlipPanel}");
-    print("_flipExtent: ${_flipExtent}");
     if (_controller.isAnimating) {
       _controller.stop();
     }
@@ -342,7 +286,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
       }
       // Temporary to avoid error beyond max. items of widgets list
       if (_direction == FlipDirection.up &&
-          _currentIndex == _widgets.length - 1) {
+          _currentIndex == widgets.length - 1) {
         _dragExtent = 0.0;
       }
       if (_dragExtent.abs() < _flipExtent) {
