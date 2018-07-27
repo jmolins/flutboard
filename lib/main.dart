@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_board/model/article.dart';
 import 'package:flutter_board/ui/article_page.dart';
 import 'package:flutter_board/ui/my_flip_panel.dart';
@@ -17,6 +18,9 @@ Future main() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     return MaterialApp(
       theme: ThemeData.light().copyWith(
             scaffoldBackgroundColor: Colors.white,
