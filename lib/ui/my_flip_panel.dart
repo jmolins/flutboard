@@ -2,19 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
-typedef Widget DigitBuilder(BuildContext, int);
-
-/// Signature for a function that creates a widget for a given index, e.g., in a
-/// list.
-typedef Widget IndexedItemBuilder(BuildContext, int);
-
 /// Signature for a function that creates a widget for a value emitted from a [Stream]
-typedef Widget StreamItemBuilder<T>(BuildContext, T);
-
-/// A widget for flip panel with built-in animation
-/// Content of the panel is built from [IndexedItemBuilder] or [StreamItemBuilder]
-///
-/// Note: the content size should be equal
+typedef Widget ItemBuilder<T>(BuildContext, T);
 
 enum FlipDirection { up, down, none }
 
@@ -23,52 +12,40 @@ enum LastFlip { none, previous, next }
 const double _kFastThreshold = 800.0;
 
 class FlipPanel<T> extends StatefulWidget {
-  final IndexedItemBuilder indexedItemBuilder;
-  final StreamItemBuilder<T> streamItemBuilder;
-  final Stream<T> itemStream;
+  final ItemBuilder<T> itemBuilder;
   final int itemsCount;
   final Duration period;
   final Duration duration;
-  final int loop;
   final int startIndex;
   final T initValue;
   final double spacing;
   final FlipDirection direction;
 
-  final bool isManuallyControlled;
   final List<T> items;
 
   FlipPanel({
     Key key,
-    this.indexedItemBuilder,
-    this.streamItemBuilder,
-    this.itemStream,
+    this.itemBuilder,
     this.itemsCount,
     this.period,
     this.duration,
-    this.loop,
     this.startIndex,
     this.initValue,
     this.spacing,
     this.direction,
-    this.isManuallyControlled,
     this.items,
   }) : super(key: key);
 
   /// Create a flip panel to be fliped manually
   FlipPanel.fromItems({
     Key key,
-    @required StreamItemBuilder<T> itemBuilder,
+    @required ItemBuilder<T> itemBuilder,
     @required this.items,
     this.duration = const Duration(milliseconds: 100),
   })  : assert(itemBuilder != null),
         assert(items != null),
-        isManuallyControlled = true,
-        indexedItemBuilder = null,
-        streamItemBuilder = itemBuilder,
-        itemStream = null,
+        itemBuilder = itemBuilder,
         period = null,
-        loop = 0,
         startIndex = 0,
         initValue = null,
         direction = FlipDirection.up,
@@ -86,15 +63,11 @@ class _FlipPanelState<T> extends State<FlipPanel>
   Animation _animation;
   int _currentIndex;
   bool _isReversePhase;
-  bool _isStreamMode;
   bool _running;
   final _perspective = 0.0003;
   final _zeroAngle =
       0.0001; // There's something wrong in the perspective transform, I use a very small value instead of zero to temporarily get it around.
-  T _currentValue, _nextValue;
-  Timer _timer;
-  StreamSubscription<T> _subscription;
-  bool _isManuallyControlled;
+
   FlipDirection _direction;
 
   List<Widget> widgets;
@@ -119,69 +92,43 @@ class _FlipPanelState<T> extends State<FlipPanel>
   void initState() {
     super.initState();
     _currentIndex = widget.startIndex;
-    _isStreamMode = widget.itemStream != null;
     _isReversePhase = false;
     _running = false;
-    _isManuallyControlled = widget.isManuallyControlled;
     _direction = widget.direction;
     _items = widget.items;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {});
 
-    if (!_isManuallyControlled) {
-      _controller =
-          new AnimationController(duration: widget.duration, vsync: this)
-            ..addStatusListener((status) {
-              if (status == AnimationStatus.completed) {
-                _isReversePhase = true;
-                _controller.reverse();
-              }
-              if (status == AnimationStatus.dismissed) {
-                _currentValue = _nextValue;
-                _running = false;
-              }
-            })
-            ..addListener(() {
-              setState(() {
-                _running = true;
-              });
+    _controller =
+        new AnimationController(duration: widget.duration, vsync: this)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed && !_dragging) {
+              _isReversePhase = true;
+              _controller.reverse();
+            }
+            if (status == AnimationStatus.dismissed) {
+              //_currentValue = _nextValue;
+              _running = false;
+              _currentIndex = _lastFlip == LastFlip.next &&
+                      _currentIndex < widgets.length - 1
+                  ? _currentIndex + 1
+                  : _lastFlip == LastFlip.previous && _currentIndex > 0
+                      ? _currentIndex - 1
+                      : _currentIndex;
+            }
+          })
+          ..addListener(() {
+            setState(() {
+              _running = true;
             });
-      _animation =
-          Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
-    } else {
-      _controller =
-          new AnimationController(duration: widget.duration, vsync: this)
-            ..addStatusListener((status) {
-              if (status == AnimationStatus.completed && !_dragging) {
-                _isReversePhase = true;
-                _controller.reverse();
-              }
-              if (status == AnimationStatus.dismissed) {
-                //_currentValue = _nextValue;
-                _running = false;
-                _currentIndex = _lastFlip == LastFlip.next &&
-                        _currentIndex < widgets.length - 1
-                    ? _currentIndex + 1
-                    : _lastFlip == LastFlip.previous && _currentIndex > 0
-                        ? _currentIndex - 1
-                        : _currentIndex;
-              }
-            })
-            ..addListener(() {
-              setState(() {
-                _running = true;
-              });
-            });
-      _animation =
-          Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
-    }
+          });
+    _animation =
+        Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    if (_subscription != null) _subscription.cancel();
-    if (_timer != null) _timer.cancel();
     super.dispose();
   }
 
@@ -212,11 +159,15 @@ class _FlipPanelState<T> extends State<FlipPanel>
     );
   }
 
+  void backFlip() {
+    _direction = FlipDirection.down;
+    _controller.forward();
+  }
+
   void _buildWidgetsListIfNeeded(BuildContext context) {
     if (widgets == null) {
-      widgets = _items
-          .map((article) => widget.streamItemBuilder(context, article))
-          .toList();
+      widgets =
+          _items.map((item) => widget.itemBuilder(context, item)).toList();
       _upperChild1 = makeUpperClip(widgets[0]);
       _lowerChild1 = makeLowerClip(widgets[0]);
     }
@@ -412,39 +363,34 @@ class _FlipPanelState<T> extends State<FlipPanel>
               _buildLowerFlipPanel(),
             ],
           )
-        : _isStreamMode && _currentValue == null
-            ? Container()
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Transform(
-                      alignment: Alignment.bottomCenter,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, _perspective)
-                        ..rotateX(_zeroAngle),
-                      child: _upperChild1),
-                  Padding(
-                    padding: EdgeInsets.only(top: widget.spacing),
-                  ),
-                  Transform(
-                      alignment: Alignment.topCenter,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, _perspective)
-                        ..rotateX(_zeroAngle),
-                      child: _lowerChild1)
-                ],
-              );
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Transform(
+                  alignment: Alignment.bottomCenter,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, _perspective)
+                    ..rotateX(_zeroAngle),
+                  child: _upperChild1),
+              Padding(
+                padding: EdgeInsets.only(top: widget.spacing),
+              ),
+              Transform(
+                  alignment: Alignment.topCenter,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, _perspective)
+                    ..rotateX(_zeroAngle),
+                  child: _lowerChild1)
+            ],
+          );
 
-    if (_isManuallyControlled) {
-      return GestureDetector(
-        onVerticalDragStart: _handleDragStart,
-        onVerticalDragUpdate: _handleDragUpdate,
-        onVerticalDragEnd: _handleDragEnd,
-        child: content,
-      );
-    }
-    return content;
+    return GestureDetector(
+      onVerticalDragStart: _handleDragStart,
+      onVerticalDragUpdate: _handleDragUpdate,
+      onVerticalDragEnd: _handleDragEnd,
+      child: content,
+    );
   }
 }
