@@ -38,7 +38,7 @@ class HomePage extends StatelessWidget {
       child: Scaffold(
         body: FlipPanel.fromItems(
           items: articles,
-          itemBuilder: (context, article) => ArticlePage(article),
+          itemBuilder: (context, article, onBackFlip) => ArticlePage(article, onBackFlip),
         ),
       ),
     );

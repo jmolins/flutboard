@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'dart:math' as math;
 
-/// Signature for a function that creates a widget for a value emitted from a [Stream]
-typedef Widget ItemBuilder<T>(BuildContext, T);
+typedef Widget ItemBuilder<T>(BuildContext, T, VoidCallback);
 
 enum FlipDirection { up, down, none }
 
@@ -13,12 +11,8 @@ const double _kFastThreshold = 800.0;
 
 class FlipPanel<T> extends StatefulWidget {
   final ItemBuilder<T> itemBuilder;
-  final int itemsCount;
-  final Duration period;
   final Duration duration;
   final int startIndex;
-  final T initValue;
-  final double spacing;
   final FlipDirection direction;
 
   final List<T> items;
@@ -26,12 +20,8 @@ class FlipPanel<T> extends StatefulWidget {
   FlipPanel({
     Key key,
     this.itemBuilder,
-    this.itemsCount,
-    this.period,
     this.duration,
     this.startIndex,
-    this.initValue,
-    this.spacing,
     this.direction,
     this.items,
   }) : super(key: key);
@@ -45,12 +35,8 @@ class FlipPanel<T> extends StatefulWidget {
   })  : assert(itemBuilder != null),
         assert(items != null),
         itemBuilder = itemBuilder,
-        period = null,
         startIndex = 0,
-        initValue = null,
         direction = FlipDirection.up,
-        spacing = 0.0,
-        itemsCount = null,
         super(key: key);
 
   @override
@@ -160,14 +146,23 @@ class _FlipPanelState<T> extends State<FlipPanel>
   }
 
   void backFlip() {
+    if (_currentIndex == 0) return;
+    _running = true;
+    _currentChild = null;
+    _isReversePhase = false;
     _direction = FlipDirection.down;
-    _controller.forward();
+    _lastFlip = LastFlip.previous;
+    _controller.animateTo(1.0);
   }
 
   void _buildWidgetsListIfNeeded(BuildContext context) {
     if (widgets == null) {
-      widgets =
-          _items.map((item) => widget.itemBuilder(context, item)).toList();
+      widgets = [];
+      widgets.add(widget.itemBuilder(context, _items[0], null));
+      widgets.addAll(_items
+          .skip(1)
+          .map((item) => widget.itemBuilder(context, item, backFlip))
+          .toList());
       _upperChild1 = makeUpperClip(widgets[0]);
       _lowerChild1 = makeLowerClip(widgets[0]);
     }
@@ -357,9 +352,6 @@ class _FlipPanelState<T> extends State<FlipPanel>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _buildUpperFlipPanel(),
-              Padding(
-                padding: EdgeInsets.only(top: widget.spacing),
-              ),
               _buildLowerFlipPanel(),
             ],
           )
@@ -374,9 +366,6 @@ class _FlipPanelState<T> extends State<FlipPanel>
                     ..setEntry(3, 2, _perspective)
                     ..rotateX(_zeroAngle),
                   child: _upperChild1),
-              Padding(
-                padding: EdgeInsets.only(top: widget.spacing),
-              ),
               Transform(
                   alignment: Alignment.topCenter,
                   transform: Matrix4.identity()

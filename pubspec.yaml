@@ -20,3 +20,4 @@ flutter:
   assets:
     - assets/data/articles.json
     - assets/images/1x1_transparent.png
+    - assets/images/flutter_logo.png

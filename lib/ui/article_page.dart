@@ -6,7 +6,9 @@ import 'package:flutter_board/model/article.dart';
 class ArticlePage extends StatelessWidget {
   final Article article;
 
-  ArticlePage(this.article);
+  final VoidCallback onFlipBack;
+
+  ArticlePage(this.article, this.onFlipBack);
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +42,18 @@ class ArticlePage extends StatelessWidget {
       child: Column(
         children: [
           AppBar(
+            leading: onFlipBack != null
+                ? new IconButton(
+                    icon: new Icon(Icons.arrow_back),
+                    color: Colors.black87,
+                    onPressed: onFlipBack,
+                  )
+                : Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Image.asset(
+                      'assets/images/flutter_logo.png',
+                    ),
+                  ),
             title: Text(
               article.source,
               style: TextStyle(color: Colors.black87),
