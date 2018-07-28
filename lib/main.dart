@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
     return ArticleBlocProvider(
       bloc: bloc,
       child: MaterialApp(
-        title: 'FlipPanel',
+        title: 'FlutBoard',
         home: HomePage(),
       ),
     );

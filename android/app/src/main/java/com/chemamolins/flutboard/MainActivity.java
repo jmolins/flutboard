@@ -1,4 +1,4 @@
-package com.example.flutterboard;
+package com.chemamolins.flutboard;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;

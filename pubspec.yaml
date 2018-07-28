@@ -1,5 +1,5 @@
 name: flutter_board
-description: A FlipBoard Flutter clone
+description: A FlipBoard like Flutter application
 
 dependencies:
   flutter:
