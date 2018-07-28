@@ -8,7 +8,9 @@ class ArticlePage extends StatelessWidget {
 
   final VoidCallback onFlipBack;
 
-  ArticlePage(this.article, this.onFlipBack);
+  final double height;
+
+  ArticlePage(this.article, this.onFlipBack, this.height);
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +39,7 @@ class ArticlePage extends StatelessWidget {
 
     return Container(
       color: Colors.white,
-      height: MediaQuery.of(context).size.height - 24,
+      height: height,
       width: MediaQuery.of(context).size.width,
       child: Column(
         children: [
