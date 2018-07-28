@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-typedef Widget ItemBuilder<T>(BuildContext, T, VoidCallback);
+typedef Widget ItemBuilder<T>(BuildContext, T, VoidCallback, double);
 
 enum FlipDirection { up, down, none }
 
@@ -14,6 +14,7 @@ class FlipPanel<T> extends StatefulWidget {
   final Duration duration;
   final int startIndex;
   final FlipDirection direction;
+  final double height;
 
   final List<T> items;
 
@@ -24,6 +25,7 @@ class FlipPanel<T> extends StatefulWidget {
     this.startIndex,
     this.direction,
     this.items,
+    this.height,
   }) : super(key: key);
 
   /// Create a flip panel to be fliped manually
@@ -31,6 +33,7 @@ class FlipPanel<T> extends StatefulWidget {
     Key key,
     @required ItemBuilder<T> itemBuilder,
     @required this.items,
+    this.height,
     this.duration = const Duration(milliseconds: 100),
   })  : assert(itemBuilder != null),
         assert(items != null),
@@ -53,6 +56,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
   final _perspective = 0.0003;
   final _zeroAngle =
       0.0001; // There's something wrong in the perspective transform, I use a very small value instead of zero to temporarily get it around.
+
+  double _height;
 
   FlipDirection _direction;
 
@@ -82,6 +87,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _running = false;
     _direction = widget.direction;
     _items = widget.items;
+    _height = widget.height;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {});
 
@@ -158,10 +164,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
   void _buildWidgetsListIfNeeded(BuildContext context) {
     if (widgets == null) {
       widgets = [];
-      widgets.add(widget.itemBuilder(context, _items[0], null));
+      widgets.add(widget.itemBuilder(context, _items[0], null, _height));
       widgets.addAll(_items
           .skip(1)
-          .map((item) => widget.itemBuilder(context, item, backFlip))
+          .map((item) => widget.itemBuilder(context, item, backFlip, _height))
           .toList());
       _upperChild1 = makeUpperClip(widgets[0]);
       _lowerChild1 = makeLowerClip(widgets[0]);
@@ -281,6 +287,16 @@ class _FlipPanelState<T> extends State<FlipPanel>
                   ..setEntry(3, 2, _perspective)
                   ..rotateX(_zeroAngle),
                 child: _upperChild1),
+            _isReversePhase
+                ? Opacity(
+                    opacity: 1 - _controller.value,
+                    child: Container(
+                      alignment: Alignment.bottomCenter,
+                      height: _height / 2,
+                      width: MediaQuery.of(context).size.width,
+                      color: Colors.black,
+                    ))
+                : Container(),
             Transform(
               alignment: Alignment.bottomCenter,
               transform: Matrix4.identity()
@@ -298,6 +314,16 @@ class _FlipPanelState<T> extends State<FlipPanel>
                   ..setEntry(3, 2, _perspective)
                   ..rotateX(_zeroAngle),
                 child: _upperChild2),
+            !_isReversePhase
+                ? Opacity(
+                    opacity: 1 - _controller.value,
+                    child: Container(
+                      alignment: Alignment.bottomCenter,
+                      height: _height / 2,
+                      width: MediaQuery.of(context).size.width,
+                      color: Colors.black,
+                    ))
+                : Container(),
             Transform(
               alignment: Alignment.bottomCenter,
               transform: Matrix4.identity()
@@ -317,6 +343,16 @@ class _FlipPanelState<T> extends State<FlipPanel>
                   ..setEntry(3, 2, _perspective)
                   ..rotateX(_zeroAngle),
                 child: _lowerChild2),
+            !_isReversePhase
+                ? Opacity(
+                    opacity: 1 - _controller.value,
+                    child: Container(
+                      alignment: Alignment.bottomCenter,
+                      height: _height / 2,
+                      width: MediaQuery.of(context).size.width,
+                      color: Colors.black,
+                    ))
+                : Container(),
             Transform(
               alignment: Alignment.topCenter,
               transform: Matrix4.identity()
@@ -334,6 +370,16 @@ class _FlipPanelState<T> extends State<FlipPanel>
                   ..setEntry(3, 2, _perspective)
                   ..rotateX(_zeroAngle),
                 child: _lowerChild1),
+            _isReversePhase
+                ? Opacity(
+                    opacity: 1 - _controller.value,
+                    child: Container(
+                      alignment: Alignment.bottomCenter,
+                      height: _height / 2,
+                      width: MediaQuery.of(context).size.width,
+                      color: Colors.black,
+                    ))
+                : Container(),
             Transform(
               alignment: Alignment.topCenter,
               transform: Matrix4.identity()

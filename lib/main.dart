@@ -31,7 +31,6 @@ class MyApp extends StatelessWidget {
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-
     // Calculate height of the page before applying the SafeArea since it removes
     // the padding from the MediaQuery and can not calculate it inside the page.
     double height = MediaQuery.of(context).size.height -
@@ -42,8 +41,9 @@ class HomePage extends StatelessWidget {
       child: Scaffold(
         body: FlipPanel.fromItems(
           items: articles,
-          itemBuilder: (context, article, onBackFlip) =>
+          itemBuilder: (context, article, onBackFlip, height) =>
               ArticlePage(article, onBackFlip, height),
+          height: height,
         ),
       ),
     );
