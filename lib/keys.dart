@@ -1,0 +1,1 @@
+String NEWSAPI_KEY = "YOUR_API_KEY";

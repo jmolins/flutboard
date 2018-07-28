@@ -1,8 +1,10 @@
-# flutter_board
+# FlutBoard
 
-A FlipBoard Flutter clone
+A FlipBoard like Flutter application.
 
-## Getting Started
+# Configuration
 
-For help getting started with Flutter, view our online
-[documentation](https://flutter.io/).
+Request an API KEY in https://newsapi.org
+
+Set the key in "keys.dart" file.
+

@@ -1,29 +1,31 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:flutter_board/model/article.dart';
+import 'package:flutter_board/service/api.dart';
+import 'package:flutter_board/service/article_bloc.dart';
+import 'package:flutter_board/service/article_bloc_provider.dart';
 import 'package:flutter_board/ui/article_page.dart';
 import 'package:flutter_board/ui/my_flip_panel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_board/service/articles.dart';
-
-List<Article> articles;
 
 Future main() async {
-  articles = await loadArticles();
-
   runApp(new MyApp());
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
-    return MaterialApp(
-      title: 'FlipPanel',
-      home: HomePage(),
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+    ArticleBloc bloc = ArticleBloc(api: Api());
+    bloc.getArticles();
+
+    return ArticleBlocProvider(
+      bloc: bloc,
+      child: MaterialApp(
+        title: 'FlipPanel',
+        home: HomePage(),
+      ),
     );
   }
 }
@@ -39,8 +41,8 @@ class HomePage extends StatelessWidget {
 
     return SafeArea(
       child: Scaffold(
-        body: FlipPanel.fromItems(
-          items: articles,
+        body: FlipPanel(
+          itemStream: ArticleBlocProvider.of(context).articles,
           itemBuilder: (context, article, onBackFlip, height) =>
               ArticlePage(article, onBackFlip, height),
           height: height,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -12,34 +14,17 @@ const double _kFastThreshold = 800.0;
 class FlipPanel<T> extends StatefulWidget {
   final ItemBuilder<T> itemBuilder;
   final Duration duration;
-  final int startIndex;
-  final FlipDirection direction;
   final double height;
-
-  final List<T> items;
+  final Stream<List<T>> itemStream;
 
   FlipPanel({
     Key key,
-    this.itemBuilder,
-    this.duration,
-    this.startIndex,
-    this.direction,
-    this.items,
-    this.height,
-  }) : super(key: key);
-
-  /// Create a flip panel to be fliped manually
-  FlipPanel.fromItems({
-    Key key,
-    @required ItemBuilder<T> itemBuilder,
-    @required this.items,
+    @required this.itemBuilder,
+    @required this.itemStream,
     this.height,
     this.duration = const Duration(milliseconds: 100),
   })  : assert(itemBuilder != null),
-        assert(items != null),
-        itemBuilder = itemBuilder,
-        startIndex = 0,
-        direction = FlipDirection.up,
+        assert(itemStream != null),
         super(key: key);
 
   @override
@@ -62,7 +47,13 @@ class _FlipPanelState<T> extends State<FlipPanel>
   FlipDirection _direction;
 
   List<Widget> widgets;
-  List<T> _items;
+
+  StreamSubscription<List<T>> _subscription;
+
+  // Items that have been received through the stream.
+  // This is used to know if we need to request more items from the server
+  // depending on the user flipping.
+  int _availableItems = 0;
 
   Widget _prevChild, _currentChild, _nextChild;
   Widget _upperChild1, _upperChild2;
@@ -82,11 +73,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.startIndex;
+    _currentIndex = 0;
     _isReversePhase = false;
     _running = false;
-    _direction = widget.direction;
-    _items = widget.items;
+    _direction = FlipDirection.none;
     _height = widget.height;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {});
@@ -116,16 +106,45 @@ class _FlipPanelState<T> extends State<FlipPanel>
           });
     _animation =
         Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
+
+    _subscription = widget.itemStream.distinct().listen((items) {
+      if (items == null || items.length == 0) {
+        widgets = null;
+        setState(() {});
+      }
+      if (_availableItems == 0) {
+        widgets = [];
+        widgets.add(widget.itemBuilder(context, items[0], null, _height));
+        widgets.addAll(items
+            .skip(1)
+            .map((item) => widget.itemBuilder(context, item, backFlip, _height))
+            .toList());
+        _upperChild1 = makeUpperClip(widgets[0]);
+        _lowerChild1 = makeLowerClip(widgets[0]);
+      } else {
+        widgets.addAll(items
+            .map((item) => widget.itemBuilder(context, item, backFlip, _height))
+            .toList());
+      }
+      _availableItems += items.length;
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    if (_subscription != null) _subscription.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_availableItems == 0) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
     _buildChildWidgetsIfNeed(context);
 
     return _buildPanel();
@@ -161,21 +180,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _controller.animateTo(1.0);
   }
 
-  void _buildWidgetsListIfNeeded(BuildContext context) {
-    if (widgets == null) {
-      widgets = [];
-      widgets.add(widget.itemBuilder(context, _items[0], null, _height));
-      widgets.addAll(_items
-          .skip(1)
-          .map((item) => widget.itemBuilder(context, item, backFlip, _height))
-          .toList());
-      _upperChild1 = makeUpperClip(widgets[0]);
-      _lowerChild1 = makeLowerClip(widgets[0]);
-    }
-  }
-
   void _buildChildWidgetsIfNeed(BuildContext context) {
-    _buildWidgetsListIfNeeded(context);
     if (_running) {
       if (_direction == FlipDirection.up) {
         if (_currentChild == null && _currentIndex < widgets.length - 1) {
@@ -229,14 +234,14 @@ class _FlipPanelState<T> extends State<FlipPanel>
         _direction = _dragExtent < 0 ? FlipDirection.up : FlipDirection.down;
         _currentChild = null;
       }
-      // Need to add 0.01 to correct an artifact appearing when campling to limit
+      // Need to add 0.01 to correct an artifact appearing when clamping to limit
       _dragExtent = _direction == FlipDirection.up
           ? _dragExtent.clamp(-(_flipExtent * 2 + 0.01), 0.0)
           : _dragExtent.clamp(0.0, _flipExtent * 2 - 0.01);
       if (_direction == FlipDirection.down && _currentIndex == 0) {
         _dragExtent = 0.0;
       }
-      // Temporary to avoid error beyond max. items of widgets list
+      // Avoid going beyond max. items of widgets list
       if (_direction == FlipDirection.up &&
           _currentIndex == widgets.length - 1) {
         _dragExtent = 0.0;

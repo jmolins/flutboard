@@ -6,8 +6,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^0.1.2
-
-  flip_panel: ^0.0.4
+  rxdart: ^0.16.6
 
 dev_dependencies:
   flutter_test:
@@ -18,6 +17,5 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/data/articles.json
     - assets/images/1x1_transparent.png
     - assets/images/flutter_logo.png
