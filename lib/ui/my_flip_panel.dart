@@ -114,7 +114,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
       }
       if (_availableItems == 0) {
         widgets = [];
-        widgets.add(widget.itemBuilder(context, items[0], null, _height));
+        widgets.add(_buildFirstWidget(items[0]));
         widgets.addAll(items
             .skip(1)
             .map((item) => widget.itemBuilder(context, item, backFlip, _height))
@@ -136,6 +136,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _controller.dispose();
     if (_subscription != null) _subscription.cancel();
     super.dispose();
+  }
+
+  Widget _buildFirstWidget(T item) {
+    return widget.itemBuilder(context, item, null, _height);
   }
 
   @override
