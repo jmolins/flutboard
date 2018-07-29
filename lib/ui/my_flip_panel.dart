@@ -67,6 +67,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
   // we launch a request to server for more items (next page).
   int _updateThreshold = 5;
 
+  bool _waitingForRefresh = false;
+
   Widget _prevChild, _currentChild, _nextChild;
   Widget _upperChild1, _upperChild2;
   Widget _lowerChild1, _lowerChild2;
@@ -127,13 +129,18 @@ class _FlipPanelState<T> extends State<FlipPanel>
         Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
 
     _subscription = widget.itemStream.distinct().listen((items) {
+      // A null items list is sent to indicate that a refresh
+      // request has been sent to the server. It will be used to show a refresh
+      // indicator
       if (items == null || items.length == 0) {
         widgets = null;
         _availableItems = 0;
         _currentIndex = 0;
+        _waitingForRefresh = true;
         setState(() {});
         return;
       }
+      _waitingForRefresh = false;
       if (_availableItems == 0) {
         widgets = [];
         widgets.add(_buildFirstWidget(items[0]));
@@ -166,12 +173,17 @@ class _FlipPanelState<T> extends State<FlipPanel>
 
   @override
   Widget build(BuildContext context) {
-    if (widgets == null || _availableItems == 0) {
-      return Center(
-        child: CircularProgressIndicator(),
-      );
+    // We only build new widgets when not waiting for refresh.
+    // If we are waiting for refresh we don't invalidate the present widgets
+    // until new ones are received
+    if (!_waitingForRefresh) {
+      if (widgets == null || _availableItems == 0) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      }
+      _buildChildWidgetsIfNeed(context);
     }
-    _buildChildWidgetsIfNeed(context);
 
     return _buildPanel();
   }
@@ -432,7 +444,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
                 ..setEntry(3, 2, _perspective)
                 ..rotateX(_isReversePhase ? -_animation.value : math.pi / 2),
               child: _lowerChild2,
-            )
+            ),
           ],
         );
 
@@ -452,12 +464,25 @@ class _FlipPanelState<T> extends State<FlipPanel>
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Transform(
-                  alignment: Alignment.bottomCenter,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, _perspective)
-                    ..rotateX(_zeroAngle),
-                  child: _upperChild1),
+              Stack(
+                children: <Widget>[
+                  Transform(
+                      alignment: Alignment.bottomCenter,
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, _perspective)
+                        ..rotateX(_zeroAngle),
+                      child: _upperChild1),
+                  _waitingForRefresh
+                      ? Padding(
+                          padding: EdgeInsets.only(top: 100.0),
+                          child: Container(
+                            width: double.infinity,
+                            child: Center(child: RefreshProgressIndicator()),
+                          ),
+                        )
+                      : Container(),
+                ],
+              ),
               Transform(
                   alignment: Alignment.topCenter,
                   transform: Matrix4.identity()

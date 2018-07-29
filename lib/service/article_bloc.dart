@@ -24,9 +24,10 @@ class ArticleBloc {
   Future<void> getArticles({bool refresh = false}) async {
     List<Article> articles;
     if (refresh) {
-      articles = await _getArticles();
       // Send a null list prior to the real list to allow the flip panel to reset
+      // and show the refresh indicator
       _articlesController.add(null);
+      articles = await _getArticles();
       _articlesController.add(articles);
       _nextPage = 2;
     } else {
