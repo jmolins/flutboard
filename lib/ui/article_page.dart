@@ -106,10 +106,16 @@ class ArticlePage extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: EdgeInsets.all(10.0),
-              child: Text(
-                article.description,
-                style: TextStyle(fontSize: 18.0, color: Colors.black54),
-              ),
+              child: new LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                print(constraints);
+                return new Text(
+                  article.description,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 18.0, color: Colors.black54),
+                  maxLines: (constraints.maxHeight / 18.0).floor() - 1,
+                );
+              }),
             ),
           ),
           Row(
