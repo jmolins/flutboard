@@ -17,7 +17,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-    ArticleBloc bloc = ArticleBloc(api: Api());
+    Api api = new Api();
+    ArticleBloc bloc = ArticleBloc(api: api);
+
     bloc.getArticles();
 
     return ArticleBlocProvider(
@@ -45,6 +47,7 @@ class HomePage extends StatelessWidget {
           itemStream: ArticleBlocProvider.of(context).articles,
           itemBuilder: (context, article, onBackFlip, height) =>
               ArticlePage(article, onBackFlip, height),
+          getItemsCallback: ArticleBlocProvider.of(context).getArticles,
           height: height,
         ),
       ),

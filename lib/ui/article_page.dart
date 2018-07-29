@@ -108,7 +108,6 @@ class ArticlePage extends StatelessWidget {
               padding: EdgeInsets.all(10.0),
               child: new LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
-                print(constraints);
                 return new Text(
                   article.description,
                   overflow: TextOverflow.ellipsis,

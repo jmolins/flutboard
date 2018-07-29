@@ -5,6 +5,10 @@ import 'dart:math' as math;
 
 typedef Widget ItemBuilder<T>(BuildContext, T, VoidCallback, double);
 
+// Callback that allows to request for more items to the server or to refresh
+// the list if refresh is true.
+typedef void GetItems({bool refresh});
+
 enum FlipDirection { up, down, none }
 
 enum LastFlip { none, previous, next }
@@ -16,15 +20,19 @@ class FlipPanel<T> extends StatefulWidget {
   final Duration duration;
   final double height;
   final Stream<List<T>> itemStream;
+  final GetItems getItemsCallback;
 
   FlipPanel({
     Key key,
     @required this.itemBuilder,
     @required this.itemStream,
-    this.height,
+    @required this.getItemsCallback,
+    @required this.height,
     this.duration = const Duration(milliseconds: 100),
   })  : assert(itemBuilder != null),
         assert(itemStream != null),
+        assert(getItemsCallback != null),
+        assert(height != null),
         super(key: key);
 
   @override
@@ -55,6 +63,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
   // depending on the user flipping.
   int _availableItems = 0;
 
+  // Number of items between the _currentIndex and _availableItemns below which
+  // we launch a request to server for more items (next page).
+  int _updateThreshold = 5;
+
   Widget _prevChild, _currentChild, _nextChild;
   Widget _upperChild1, _upperChild2;
   Widget _lowerChild1, _lowerChild2;
@@ -69,6 +81,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
   double _flipExtent = 200.0;
 
   LastFlip _lastFlip = LastFlip.none;
+
+  bool _shouldShowNoMoreItemsMessage = false;
 
   @override
   void initState() {
@@ -97,6 +111,11 @@ class _FlipPanelState<T> extends State<FlipPanel>
                   : _lastFlip == LastFlip.previous && _currentIndex > 0
                       ? _currentIndex - 1
                       : _currentIndex;
+              // Avoid going beyond max. items of widgets list
+              if (_lastFlip == LastFlip.next &&
+                  _currentIndex == _availableItems - _updateThreshold) {
+                widget.getItemsCallback();
+              }
             }
           })
           ..addListener(() {
@@ -245,10 +264,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
       if (_direction == FlipDirection.down && _currentIndex == 0) {
         _dragExtent = 0.0;
       }
-      // Avoid going beyond max. items of widgets list
       if (_direction == FlipDirection.up &&
           _currentIndex == widgets.length - 1) {
         _dragExtent = 0.0;
+        _shouldShowNoMoreItemsMessage = true;
       }
       if (_dragExtent.abs() < _flipExtent) {
         _controller.value = (_dragExtent / _flipExtent).abs();
@@ -263,7 +282,13 @@ class _FlipPanelState<T> extends State<FlipPanel>
   void _handleDragEnd(DragEndDetails details) {
     _dragging = false;
 
-    if (_dragExtent == 0.0) return;
+    if (_dragExtent == 0.0) {
+      if (_shouldShowNoMoreItemsMessage) {
+        _showNoMoreItemsMessage();
+        _shouldShowNoMoreItemsMessage = false;
+      }
+      return;
+    }
 
     final double velocity = details.primaryVelocity;
     final bool fast = velocity.abs() > _kFastThreshold;
@@ -436,5 +461,13 @@ class _FlipPanelState<T> extends State<FlipPanel>
       onVerticalDragEnd: _handleDragEnd,
       child: content,
     );
+  }
+
+  void _showNoMoreItemsMessage() {
+    Scaffold.of(context).showSnackBar(
+          SnackBar(
+            content: Text("No more articles for selected sources"),
+          ),
+        );
   }
 }
