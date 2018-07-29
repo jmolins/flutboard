@@ -26,6 +26,9 @@ class MyApp extends StatelessWidget {
       bloc: bloc,
       child: MaterialApp(
         title: 'FlutBoard',
+        theme: ThemeData(
+          primaryIconTheme: IconThemeData(color: Colors.black87),
+        ),
         home: HomePage(),
       ),
     );

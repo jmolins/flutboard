@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_board/model/article.dart';
+import 'package:flutter_board/service/article_bloc_provider.dart';
 
 class ArticlePage extends StatelessWidget {
   final Article article;
@@ -63,10 +64,38 @@ class ArticlePage extends StatelessWidget {
             centerTitle: true,
             backgroundColor: Colors.white,
             actions: <Widget>[
-              new IconButton(
-                icon: new Icon(Icons.menu),
-                color: Colors.black87,
-                onPressed: () => _showDialog("Top menu pressed"),
+              onFlipBack == null
+                  ? new IconButton(
+                      icon: new Icon(Icons.refresh),
+                      //color: Colors.black87,
+                      onPressed: () => ArticleBlocProvider
+                          .of(context)
+                          .getArticles(refresh: true),
+                    )
+                  : Container(),
+              PopupMenuButton<String>(
+                itemBuilder: (BuildContext context) {
+                  return <PopupMenuEntry<String>>[
+                    onFlipBack == null
+                        ? PopupMenuItem<String>(
+                            value: 'sources',
+                            child: Text('Select Sources'),
+                          )
+                        : PopupMenuItem<String>(
+                            value: 'return',
+                            child: Text('Return to start'),
+                          ),
+                    PopupMenuItem<String>(
+                      value: 'about',
+                      child: Text('About'),
+                    ),
+                  ];
+                },
+                onSelected: (String value) {
+                  if (value == 'refresh') {
+                    ArticleBlocProvider.of(context).getArticles(refresh: true);
+                  }
+                },
               ),
             ],
           ),

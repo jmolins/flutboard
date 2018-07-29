@@ -28,14 +28,14 @@ class ArticleBloc {
       // Send a null list prior to the real list to allow the flip panel to reset
       _articlesController.add(null);
       _articlesController.add(articles);
-      _nextPage++;
+      _nextPage = 2;
     } else {
       if (_totalItemsForRequestedSources > (_nextPage - 1) * _pageSize) {
         articles = await _getArticles(page: _nextPage);
         _articlesController.add(articles);
         _nextPage++;
-      } else
-        print("No more items");
+      }
+      // else no more items;
     }
   }
 

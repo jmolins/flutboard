@@ -129,7 +129,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _subscription = widget.itemStream.distinct().listen((items) {
       if (items == null || items.length == 0) {
         widgets = null;
+        _availableItems = 0;
+        _currentIndex = 0;
         setState(() {});
+        return;
       }
       if (_availableItems == 0) {
         widgets = [];
@@ -163,7 +166,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
 
   @override
   Widget build(BuildContext context) {
-    if (_availableItems == 0) {
+    if (widgets == null || _availableItems == 0) {
       return Center(
         child: CircularProgressIndicator(),
       );
