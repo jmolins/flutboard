@@ -1,42 +1,33 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_board/model/article.dart';
 import 'package:flutter_board/service/article_bloc_provider.dart';
 
+typedef void FlipBack({bool backToTop});
+
 class ArticlePage extends StatelessWidget {
   final Article article;
 
-  final VoidCallback onFlipBack;
+  final FlipBack flipBack;
 
   final double height;
 
-  ArticlePage(this.article, this.onFlipBack, this.height);
+  ArticlePage(this.article, this.flipBack, this.height);
 
   @override
   Widget build(BuildContext context) {
-    Future<Null> _showDialog(String message) async {
-      return showDialog<Null>(
-        context: context,
-        barrierDismissible: false, // user must tap button!
-        builder: (BuildContext context) {
-          return new AlertDialog(
-            title: new Text('Dialog'),
-            content: Text(message),
-            actions: <Widget>[
-              new FlatButton(
-                child: new Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
-
     var screenWidth = MediaQuery.of(context).size.width;
+
+    Icon _getMenuIcon(TargetPlatform platform) {
+      assert(platform != null);
+      switch (platform) {
+        case TargetPlatform.android:
+        case TargetPlatform.fuchsia:
+          return const Icon(Icons.more_vert);
+        case TargetPlatform.iOS:
+          return const Icon(Icons.more_horiz);
+      }
+      return null;
+    }
 
     return Container(
       color: Colors.white,
@@ -45,11 +36,11 @@ class ArticlePage extends StatelessWidget {
       child: Column(
         children: [
           AppBar(
-            leading: onFlipBack != null
+            leading: flipBack != null
                 ? new IconButton(
                     icon: new Icon(Icons.arrow_back),
                     color: Colors.black87,
-                    onPressed: onFlipBack,
+                    onPressed: flipBack,
                   )
                 : Padding(
                     padding: const EdgeInsets.all(10.0),
@@ -64,7 +55,7 @@ class ArticlePage extends StatelessWidget {
             centerTitle: true,
             backgroundColor: Colors.white,
             actions: <Widget>[
-              onFlipBack == null
+              flipBack == null
                   ? new IconButton(
                       icon: new Icon(Icons.refresh),
                       //color: Colors.black87,
@@ -76,14 +67,14 @@ class ArticlePage extends StatelessWidget {
               PopupMenuButton<String>(
                 itemBuilder: (BuildContext context) {
                   return <PopupMenuEntry<String>>[
-                    onFlipBack == null
+                    flipBack == null
                         ? PopupMenuItem<String>(
                             value: 'sources',
                             child: Text('Select Sources'),
                           )
                         : PopupMenuItem<String>(
-                            value: 'return',
-                            child: Text('Return to start'),
+                            value: 'back',
+                            child: Text('Back to Top'),
                           ),
                     PopupMenuItem<String>(
                       value: 'about',
@@ -92,8 +83,8 @@ class ArticlePage extends StatelessWidget {
                   ];
                 },
                 onSelected: (String value) {
-                  if (value == 'refresh') {
-                    ArticleBlocProvider.of(context).getArticles(refresh: true);
+                  if (value == 'back') {
+                    flipBack(backToTop: true);
                   }
                 },
               ),
@@ -152,12 +143,16 @@ class ArticlePage extends StatelessWidget {
             children: <Widget>[
               Expanded(child: Container()),
               IconButton(
-                icon: Icon(Icons.add),
-                onPressed: () => _showDialog("Plus icon pressed"),
+                icon: Icon(Icons.favorite_border),
+                onPressed: null,
               ),
               IconButton(
-                icon: Icon(Icons.menu),
-                onPressed: () => _showDialog("Bottom menu pressed"),
+                icon: Icon(Icons.add),
+                onPressed: null,
+              ),
+              IconButton(
+                icon: _getMenuIcon(Theme.of(context).platform),
+                onPressed: null,
               ),
             ],
           ),

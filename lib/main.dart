@@ -48,8 +48,8 @@ class HomePage extends StatelessWidget {
       child: Scaffold(
         body: FlipPanel(
           itemStream: ArticleBlocProvider.of(context).articles,
-          itemBuilder: (context, article, onBackFlip, height) =>
-              ArticlePage(article, onBackFlip, height),
+          itemBuilder: (context, article, flipBack, height) =>
+              ArticlePage(article, flipBack, height),
           getItemsCallback: ArticleBlocProvider.of(context).getArticles,
           height: height,
         ),
