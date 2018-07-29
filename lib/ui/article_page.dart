@@ -53,7 +53,7 @@ class ArticlePage extends StatelessWidget {
                 : Padding(
                     padding: const EdgeInsets.all(10.0),
                     child: Image.asset(
-                      'assets/images/flutter_logo.png',
+                      'assets/images/flutboard_logo.png',
                     ),
                   ),
             title: Text(
