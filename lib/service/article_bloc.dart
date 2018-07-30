@@ -20,7 +20,7 @@ class ArticleBloc {
   int _totalItemsForRequestedSources = 1;
 
   SharedPreferences prefs;
-  Map<String, dynamic> sourcesMap;
+  List<String> sourcesList;
   String sources;
 
   final _articlesController = PublishSubject<List<Article>>();
@@ -29,13 +29,13 @@ class ArticleBloc {
 
   void init() async {
     prefs = await SharedPreferences.getInstance();
-    sourcesMap = readSources();
-    sources = sourcesMapToUrlString();
+    sourcesList = readSources();
+    sources = sourcesListToUrlString();
   }
 
   // Inputs
   Future<void> getArticles({bool refresh = false}) async {
-    if (sourcesMap == null) {
+    if (sourcesList == null) {
       await init();
     }
     List<Article> articles;
@@ -89,31 +89,28 @@ class ArticleBloc {
     return null;
   }
 
-  Map<String, dynamic> readSources() {
+  List<String> readSources() {
     String sources = prefs.getString(_kSourcesKey);
     if (sources == null) {
-      var map = {
-        'cnn': {'name': 'CNN', 'active': true},
-        'bbc-news': {'name': 'BBC News', 'active': true}
-      };
-      saveSources(map);
-      return map;
+      var list = ['cnn', 'bbc-news'];
+      saveSources(list);
+      return list;
     }
-    Map<String, dynamic> map = json.decode(sources).cast<String, dynamic>();
-    return map;
+    List<String> list = json.decode(sources).cast<String>();
+    return list;
   }
 
-  void saveSources(Map<String, dynamic> sourcesMap) {
-    prefs.setString(_kSourcesKey, jsonEncode(sourcesMap));
+  void saveSources(List<String> sourcesList) {
+    prefs.setString(_kSourcesKey, jsonEncode(sourcesList));
   }
 
   /// Stores the string containing the sources that will be used in the url
   /// to fetch articles from the server
   /// TODO: this should be moved to the api
-  String sourcesMapToUrlString() {
+  String sourcesListToUrlString() {
     String str = '';
-    sourcesMap.forEach((source, value) {
-      if (value['active']) str += "$source,";
+    sourcesList.forEach((source) {
+      str += "$source,";
     });
     if (str.endsWith(',')) {
       str = str.substring(0, str.length - 1);
