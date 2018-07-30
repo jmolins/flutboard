@@ -26,9 +26,7 @@ class MyApp extends StatelessWidget {
       bloc: bloc,
       child: MaterialApp(
         title: 'FlutBoard',
-        theme: ThemeData(
-          primaryIconTheme: IconThemeData(color: Colors.black87),
-        ),
+        theme: _buildTheme(),
         home: HomePage(),
       ),
     );
@@ -56,4 +54,25 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+}
+
+ThemeData _buildTheme() {
+  final ThemeData base = ThemeData.light();
+  return base.copyWith(
+    accentColor: Colors.black87,
+    primaryColor: const Color(0xFFF6F6F6),
+    scaffoldBackgroundColor: const Color(0xFFF6F6F6),
+    primaryIconTheme: base.iconTheme.copyWith(color: Colors.black87),
+    iconTheme: base.iconTheme.copyWith(color: Colors.black87),
+    textTheme: _buildShrineTextTheme(base.textTheme),
+    primaryTextTheme: _buildShrineTextTheme(base.primaryTextTheme),
+    accentTextTheme: _buildShrineTextTheme(base.accentTextTheme),
+  );
+}
+
+TextTheme _buildShrineTextTheme(TextTheme base) {
+  return base.apply(
+    displayColor: Colors.black87,
+    bodyColor: Colors.black87,
+  );
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_board/model/article.dart';
 import 'package:flutter_board/service/article_bloc_provider.dart';
+import 'package:flutter_board/ui/sources_page.dart';
 
 typedef void FlipBack({bool backToTop});
 
@@ -52,11 +53,12 @@ class ArticlePage extends StatelessWidget {
               article.source,
               style: TextStyle(color: Colors.black87),
             ),
+            elevation: 0.0,
             centerTitle: true,
             backgroundColor: Colors.white,
             actions: <Widget>[
               flipBack == null
-                  ? new IconButton(
+                  ? IconButton(
                       icon: new Icon(Icons.refresh),
                       //color: Colors.black87,
                       onPressed: () => ArticleBlocProvider
@@ -85,6 +87,12 @@ class ArticlePage extends StatelessWidget {
                 onSelected: (String value) {
                   if (value == 'back') {
                     flipBack(backToTop: true);
+                  }
+                  if (value == 'sources') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SourcesPage()),
+                    );
                   }
                 },
               ),

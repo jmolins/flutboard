@@ -5,13 +5,15 @@ import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
 class Api {
-  final String _baseUrl = "https://newsapi.org/v2/top-headlines?sources=";
+  final String _baseUrl = "https://newsapi.org/v2/top-headlines";
 
   Future<String> getArticles({
+    @required String sources,
     @required int page,
     @required int pageSize,
   }) async {
-    String url = Uri.encodeFull(_baseUrl + 'cnn,bbc-news&pageSize=$pageSize&page=$page');
+    String url = Uri.encodeFull(
+        _baseUrl + '?sources=$sources&pageSize=$pageSize&page=$page');
     try {
       http.Response response = await http.get(url, headers: _headers());
       if (response.statusCode == 200) {
