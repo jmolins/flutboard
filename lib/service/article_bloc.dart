@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_board/model/article.dart';
+import 'package:flutter_board/model/source.dart';
 import 'package:flutter_board/service/api.dart';
 import 'package:meta/meta.dart';
 
@@ -20,22 +21,23 @@ class ArticleBloc {
   int _totalItemsForRequestedSources = 1;
 
   SharedPreferences prefs;
-  List<String> sourcesList;
-  String sources;
+  List<String> activeSourcesList;
+  String activeSourcesStr;
 
   final _articlesController = PublishSubject<List<Article>>();
+  final _sourcesController = PublishSubject<List<Source>>();
 
   ArticleBloc({@required this.api});
 
   void init() async {
     prefs = await SharedPreferences.getInstance();
-    sourcesList = readSources();
-    sources = sourcesListToUrlString();
+    activeSourcesList = readSources();
+    activeSourcesStr = sourcesListToUrlString();
   }
 
   // Inputs
   Future<void> getArticles({bool refresh = false}) async {
-    if (sourcesList == null) {
+    if (activeSourcesList == null) {
       await init();
     }
     List<Article> articles;
@@ -56,17 +58,28 @@ class ArticleBloc {
     }
   }
 
+  Future<void> getSources() async {
+    List<Source> list = [];
+    sources.forEach((code, name) {
+      list.add(Source(code, name));
+    });
+    _sourcesController.add(list);
+  }
+
   // Outputs
   Stream<List<Article>> get articles => _articlesController.stream;
 
+  Stream<List<Source>> get allSources => _sourcesController.stream;
+
   void close() {
     _articlesController.close();
+    _sourcesController.close();
   }
 
   Future<List<Article>> _getArticles(
       {int page = 1, int pageSize = _pageSize}) async {
-    String jsonString =
-        await api.getArticles(sources: sources, page: page, pageSize: pageSize);
+    String jsonString = await api.getArticles(
+        sources: activeSourcesStr, page: page, pageSize: pageSize);
     if (jsonString != null) {
       var data = json.decode(jsonString);
       if (data != null &&
@@ -109,7 +122,7 @@ class ArticleBloc {
   /// TODO: this should be moved to the api
   String sourcesListToUrlString() {
     String str = '';
-    sourcesList.forEach((source) {
+    activeSourcesList.forEach((source) {
       str += "$source,";
     });
     if (str.endsWith(',')) {

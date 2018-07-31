@@ -91,7 +91,7 @@ class ArticlePage extends StatelessWidget {
                   if (value == 'sources') {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => SourcesPage()),
+                      MaterialPageRoute(builder: (context) => SourcesPage(ArticleBlocProvider.of(context))),
                     );
                   }
                 },
