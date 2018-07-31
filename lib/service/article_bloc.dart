@@ -51,19 +51,17 @@ class ArticleBloc {
     } else {
       if (_totalItemsForRequestedSources > (_nextPage - 1) * _pageSize) {
         articles = await _getArticles(page: _nextPage);
-        _articlesController.add(articles);
-        _nextPage++;
+        if (articles != null) {
+          _articlesController.add(articles);
+          _nextPage++;
+        }
       }
       // else no more items;
     }
   }
 
   Future<void> getSources() async {
-    List<Source> list = [];
-    sources.forEach((code, name) {
-      list.add(Source(code, name));
-    });
-    _sourcesController.add(list);
+    _sourcesController.add(await api.getSources());
   }
 
   // Outputs
@@ -87,14 +85,7 @@ class ArticleBloc {
           data["articles"] != null) {
         _totalItemsForRequestedSources = data["totalResults"];
         List<Article> articles = (data["articles"] as List<dynamic>)
-            .map((article) => Article(
-                  article['source']['name'],
-                  article['author'],
-                  article['title'],
-                  article['description'],
-                  article['url'],
-                  article['urlToImage'],
-                ))
+            .map((article) => Article.fromJson(article))
             .toList();
         return articles;
       }

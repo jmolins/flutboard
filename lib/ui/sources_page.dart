@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_board/model/source.dart';
 import 'package:flutter_board/service/article_bloc.dart';
 import 'package:flutter_board/service/article_bloc_provider.dart';
 
@@ -13,12 +12,14 @@ class SourcesPage extends StatefulWidget {
 }
 
 class SourcesPageState extends State<SourcesPage> {
-  List<Source> list;
-
   @override
   void initState() {
     super.initState();
     widget.bloc.getSources();
+  }
+
+  bool isActive(String sourceId) {
+    return widget.bloc.activeSourcesList.contains(sourceId);
   }
 
   Widget build(BuildContext context) {
@@ -27,20 +28,25 @@ class SourcesPageState extends State<SourcesPage> {
         appBar: AppBar(
           title: Text("Sources"),
           elevation: 0.0,
+          centerTitle: true,
         ),
         body: StreamBuilder(
           stream: ArticleBlocProvider.of(context).allSources,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.active) {
+            if (snapshot.connectionState == ConnectionState.active &&
+                snapshot.data != null) {
               return ListView.builder(
                 itemBuilder: (context, index) => ListTile(
-                      leading: Checkbox(value: false, onChanged: null),
+                      leading: Checkbox(
+                        value: isActive(snapshot.data[index].id),
+                        onChanged: null,
+                      ),
                       title: Text(snapshot.data[index].name),
                     ),
                 itemCount: snapshot.data.length,
               );
             } else {
-              return CircularProgressIndicator();
+              return Center(child: CircularProgressIndicator());
             }
           },
         ),
