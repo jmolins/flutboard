@@ -126,7 +126,6 @@ class ArticleBloc {
 
   /// Updates the active sources with the passed source id
   void activateSource({String id, bool activate}) {
-    //print("Activate");
     if (!activeSources.contains(id) && activate) {
       activeSources.add(id);
     } else if (activeSources.contains(id) && !activate) {
