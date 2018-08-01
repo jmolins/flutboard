@@ -21,23 +21,28 @@ class ArticleBloc {
   int _totalItemsForRequestedSources = 1;
 
   SharedPreferences prefs;
-  List<String> activeSourcesList;
-  String activeSourcesStr;
+  List<String> activeSources;
+  String _activeSourcesStr;
 
   final _articlesController = PublishSubject<List<Article>>();
   final _sourcesController = PublishSubject<List<Source>>();
 
   ArticleBloc({@required this.api});
 
-  void init() async {
+  Future<void> init() async {
     prefs = await SharedPreferences.getInstance();
-    activeSourcesList = readSources();
-    activeSourcesStr = sourcesListToUrlString();
+    loadSources();
+    _activeSourcesStr = sourcesListToUrlString();
+  }
+
+  void close() {
+    _articlesController.close();
+    _sourcesController.close();
   }
 
   // Inputs
   Future<void> getArticles({bool refresh = false}) async {
-    if (activeSourcesList == null) {
+    if (activeSources == null) {
       await init();
     }
     List<Article> articles;
@@ -69,15 +74,10 @@ class ArticleBloc {
 
   Stream<List<Source>> get allSources => _sourcesController.stream;
 
-  void close() {
-    _articlesController.close();
-    _sourcesController.close();
-  }
-
   Future<List<Article>> _getArticles(
       {int page = 1, int pageSize = _pageSize}) async {
     String jsonString = await api.getArticles(
-        sources: activeSourcesStr, page: page, pageSize: pageSize);
+        sources: _activeSourcesStr, page: page, pageSize: pageSize);
     if (jsonString != null) {
       var data = json.decode(jsonString);
       if (data != null &&
@@ -93,32 +93,46 @@ class ArticleBloc {
     return null;
   }
 
-  List<String> readSources() {
+  /// Loads active sources from localstorage
+  void loadSources() {
     String sources = prefs.getString(_kSourcesKey);
     if (sources == null) {
-      var list = ['cnn', 'bbc-news'];
-      saveSources(list);
-      return list;
+      activeSources = ['cnn', 'bbc-news'];
+      saveSources();
+      return;
     }
-    List<String> list = json.decode(sources).cast<String>();
-    return list;
+    activeSources = json.decode(sources).cast<String>();
+    return;
   }
 
-  void saveSources(List<String> sourcesList) {
-    prefs.setString(_kSourcesKey, jsonEncode(sourcesList));
+  /// Saves active sources to localstorage
+  void saveSources() {
+    prefs.setString(_kSourcesKey, jsonEncode(activeSources));
   }
 
-  /// Stores the string containing the sources that will be used in the url
+  /// Converts the active sources list to a string that will be used in the url
   /// to fetch articles from the server
   /// TODO: this should be moved to the api
   String sourcesListToUrlString() {
     String str = '';
-    activeSourcesList.forEach((source) {
+    activeSources.forEach((source) {
       str += "$source,";
     });
     if (str.endsWith(',')) {
       str = str.substring(0, str.length - 1);
     }
     return str;
+  }
+
+  /// Updates the active sources with the passed source id
+  void activateSource({String id, bool activate}) {
+    //print("Activate");
+    if (!activeSources.contains(id) && activate) {
+      activeSources.add(id);
+    } else if (activeSources.contains(id) && !activate) {
+      activeSources.remove(id);
+    }
+    saveSources();
+    _activeSourcesStr = sourcesListToUrlString();
   }
 }

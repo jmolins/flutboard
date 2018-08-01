@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_board/model/source.dart';
 import 'package:flutter_board/service/article_bloc.dart';
 import 'package:flutter_board/service/article_bloc_provider.dart';
 
 class SourcesPage extends StatefulWidget {
+  // Setting the bloc as a field since we need it in State.initState()
   final ArticleBloc bloc;
 
   SourcesPage(this.bloc);
@@ -16,10 +18,6 @@ class SourcesPageState extends State<SourcesPage> {
   void initState() {
     super.initState();
     widget.bloc.getSources();
-  }
-
-  bool isActive(String sourceId) {
-    return widget.bloc.activeSourcesList.contains(sourceId);
   }
 
   Widget build(BuildContext context) {
@@ -36,13 +34,8 @@ class SourcesPageState extends State<SourcesPage> {
             if (snapshot.connectionState == ConnectionState.active &&
                 snapshot.data != null) {
               return ListView.builder(
-                itemBuilder: (context, index) => ListTile(
-                      leading: Checkbox(
-                        value: isActive(snapshot.data[index].id),
-                        onChanged: null,
-                      ),
-                      title: Text(snapshot.data[index].name),
-                    ),
+                itemBuilder: (context, index) =>
+                    SourceTile(snapshot.data[index], widget.bloc),
                 itemCount: snapshot.data.length,
               );
             } else {
@@ -51,6 +44,43 @@ class SourcesPageState extends State<SourcesPage> {
           },
         ),
       ),
+    );
+  }
+}
+
+class SourceTile extends StatefulWidget {
+  final Source source;
+  final ArticleBloc bloc;
+
+  SourceTile(this.source, this.bloc);
+
+  @override
+  _SourceTileState createState() => _SourceTileState();
+}
+
+class _SourceTileState extends State<SourceTile> {
+  bool checkboxValue;
+
+  @override
+  void initState() {
+    super.initState();
+    checkboxValue = widget.bloc.activeSources.contains(widget.source.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Checkbox(
+        value: checkboxValue,
+        onChanged: (bool newValue) {
+          setState(() {
+            checkboxValue = newValue;
+            widget.bloc
+                .activateSource(id: widget.source.id, activate: newValue);
+          });
+        },
+      ),
+      title: Text(widget.source.name),
     );
   }
 }
