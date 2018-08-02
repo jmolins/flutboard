@@ -43,6 +43,18 @@ class ArticlePage extends StatelessWidget {
       return null;
     }
 
+    Icon _getBackIcon(TargetPlatform platform) {
+      assert(platform != null);
+      switch (platform) {
+        case TargetPlatform.android:
+        case TargetPlatform.fuchsia:
+          return const Icon(Icons.arrow_back);
+        case TargetPlatform.iOS:
+          return const Icon(Icons.arrow_back_ios);
+      }
+      return null;
+    }
+
     return Container(
       color: Colors.white,
       height: height,
@@ -52,7 +64,7 @@ class ArticlePage extends StatelessWidget {
           AppBar(
             leading: flipBack != null
                 ? new IconButton(
-                    icon: new Icon(Icons.arrow_back),
+                    icon: _getBackIcon(Theme.of(context).platform),
                     color: Colors.black87,
                     onPressed: flipBack,
                   )
