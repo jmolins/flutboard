@@ -86,6 +86,16 @@ class _FlipPanelState<T> extends State<FlipPanel>
 
   bool _shouldShowNoMoreItemsMessage = false;
 
+  /// The first time the widget is built in the physical device the passed
+  /// height is 0.0. Later the widget is updated with the correct size. Since
+  /// initState() is not called again, we set the size here.
+  /// This does not happen in the virtual device.
+  @override
+  didUpdateWidget(FlipPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _height = widget.height;
+  }
+
   @override
   void initState() {
     super.initState();

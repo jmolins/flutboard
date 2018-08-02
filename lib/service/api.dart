@@ -30,7 +30,6 @@ class Api {
     try {
       http.Response response = await http.get(url, headers: _headers());
       if (response.statusCode == 200) {
-        print(response.body);
         var data = json.decode(response.body);
         if (data != null && data["sources"] != null) {
           List<Source> sources = (data["sources"] as List<dynamic>)
