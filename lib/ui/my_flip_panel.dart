@@ -188,8 +188,13 @@ class _FlipPanelState<T> extends State<FlipPanel>
     // until new ones are received
     if (!_waitingForRefresh) {
       if (widgets == null || _availableItems == 0) {
-        return Center(
-          child: CircularProgressIndicator(),
+        return Container(
+          color: Colors.white,
+          height: _height,
+          width: MediaQuery.of(context).size.width,
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
         );
       }
       _buildChildWidgetsIfNeed(context);
@@ -476,12 +481,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
             children: [
               Stack(
                 children: <Widget>[
-                  Transform(
-                      alignment: Alignment.bottomCenter,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, _perspective)
-                        ..rotateX(_zeroAngle),
-                      child: _upperChild1),
+                  _upperChild1,
                   _waitingForRefresh
                       ? Padding(
                           padding: EdgeInsets.only(top: 100.0),
@@ -493,12 +493,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
                       : Container(),
                 ],
               ),
-              Transform(
-                  alignment: Alignment.topCenter,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, _perspective)
-                    ..rotateX(_zeroAngle),
-                  child: _lowerChild1)
+              _lowerChild1,
             ],
           );
 
@@ -512,9 +507,9 @@ class _FlipPanelState<T> extends State<FlipPanel>
 
   void _showNoMoreItemsMessage() {
     Scaffold.of(context).showSnackBar(
-          SnackBar(
-            content: Text("No more articles for selected sources"),
-          ),
-        );
+      SnackBar(
+        content: Text("No more articles for selected sources"),
+      ),
+    );
   }
 }

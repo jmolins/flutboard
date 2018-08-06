@@ -43,6 +43,8 @@ class HomePage extends StatelessWidget {
         MediaQuery.of(context).padding.bottom;
 
     return SafeArea(
+      // This Scaffold is used to display the FlipPane SnackBar. Later,
+      // each article page will have its own Scaffold
       child: Scaffold(
         body: FlipPanel(
           itemStream: ArticleBlocProvider.of(context).articles,
