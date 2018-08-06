@@ -62,8 +62,8 @@ ThemeData _buildTheme() {
   final ThemeData base = ThemeData.light();
   return base.copyWith(
     accentColor: Colors.black87,
-    primaryColor: const Color(0xFFF6F6F6),
-    scaffoldBackgroundColor: const Color(0xFFF6F6F6),
+    primaryColor: Colors.white,
+    scaffoldBackgroundColor: Colors.white,
     primaryIconTheme: base.iconTheme.copyWith(color: Colors.black87),
     iconTheme: base.iconTheme.copyWith(color: Colors.black87),
     textTheme: _buildShrineTextTheme(base.textTheme),
