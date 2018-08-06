@@ -147,11 +147,12 @@ class ArticlePageState extends State<ArticlePage> {
         body: GestureDetector(
           onTap: _launchURL,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               SizedBox(
                 width: screenWidth,
-                //height: screenWidth / 2,
-                child: widget.article.urlToImage != null
+                child: widget.article.urlToImage != null &&
+                    widget.article.urlToImage.trim() != ""
                     ? FadeInImage.assetNetwork(
                         placeholder: 'assets/images/1x1_transparent.png',
                         image: widget.article.urlToImage,
@@ -171,16 +172,16 @@ class ArticlePageState extends State<ArticlePage> {
               ),
               Padding(
                 padding: EdgeInsets.all(10.0),
-                child: Row(
-                  children: <Widget>[
-                    Text(
-                      widget.article.author ?? widget.article.source,
-                      style: TextStyle(
-                          fontSize: 15.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey),
-                    ),
-                  ],
+                child: Text(
+                  // Be sure
+                  widget.article.author != null &&
+                          widget.article.author.trim() != ""
+                      ? widget.article.author
+                      : widget.article.source,
+                  style: TextStyle(
+                      fontSize: 15.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey),
                 ),
               ),
               Expanded(
