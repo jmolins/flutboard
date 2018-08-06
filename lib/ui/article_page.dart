@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_board/model/article.dart';
 import 'package:flutter_board/service/article_bloc_provider.dart';
+import 'package:flutter_board/ui/about_page.dart';
 import 'package:flutter_board/ui/sources_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,6 +34,11 @@ class ArticlePageState extends State<ArticlePage> {
     if (result == null) {
       ArticleBlocProvider.of(context).getArticles(refresh: true);
     }
+  }
+
+  Future<Null> _aboutPage(BuildContext context) async {
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => AboutPage()));
   }
 
   _launchURL() async {
@@ -130,6 +136,9 @@ class ArticlePageState extends State<ArticlePage> {
                 }
                 if (value == 'sources') {
                   _selectSources(context);
+                }
+                if (value == 'about') {
+                  _aboutPage(context);
                 }
               },
             ),
