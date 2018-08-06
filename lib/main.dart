@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:flutter_board/service/api.dart';
-import 'package:flutter_board/service/article_bloc.dart';
-import 'package:flutter_board/service/article_bloc_provider.dart';
-import 'package:flutter_board/ui/article_page.dart';
-import 'package:flutter_board/ui/my_flip_panel.dart';
+import 'package:flutboard/service/api.dart';
+import 'package:flutboard/service/article_bloc.dart';
+import 'package:flutboard/service/article_bloc_provider.dart';
+import 'package:flutboard/ui/article_page.dart';
+import 'package:flutboard/ui/my_flip_panel.dart';
 import 'package:flutter/material.dart';
 
 Future main() async {

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_board/keys.dart';
-import 'package:flutter_board/model/source.dart';
+import 'package:flutboard/keys.dart';
+import 'package:flutboard/model/source.dart';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 

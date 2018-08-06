@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_board/model/source.dart';
-import 'package:flutter_board/service/article_bloc.dart';
-import 'package:flutter_board/service/article_bloc_provider.dart';
+import 'package:flutboard/model/source.dart';
+import 'package:flutboard/service/article_bloc.dart';
+import 'package:flutboard/service/article_bloc_provider.dart';
 
 class SourcesPage extends StatefulWidget {
   // Setting the bloc as a field since we need it in State.initState()

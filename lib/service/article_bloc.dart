@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_board/model/article.dart';
-import 'package:flutter_board/model/source.dart';
-import 'package:flutter_board/service/api.dart';
+import 'package:flutboard/model/article.dart';
+import 'package:flutboard/model/source.dart';
+import 'package:flutboard/service/api.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rxdart/rxdart.dart';

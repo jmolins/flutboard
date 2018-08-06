@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_board/model/article.dart';
-import 'package:flutter_board/service/article_bloc_provider.dart';
-import 'package:flutter_board/ui/about_page.dart';
-import 'package:flutter_board/ui/sources_page.dart';
+import 'package:flutboard/model/article.dart';
+import 'package:flutboard/service/article_bloc_provider.dart';
+import 'package:flutboard/ui/about_page.dart';
+import 'package:flutboard/ui/sources_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 typedef void FlipBack({bool backToTop});

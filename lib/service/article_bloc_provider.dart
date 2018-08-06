@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_board/service/article_bloc.dart';
+import 'package:flutboard/service/article_bloc.dart';
 
 class ArticleBlocProvider extends StatefulWidget {
   final Widget child;
