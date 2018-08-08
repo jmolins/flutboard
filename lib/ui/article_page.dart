@@ -46,8 +46,7 @@ class ArticlePageState extends State<ArticlePage> {
     if (await canLaunch(url)) {
       await launch(url);
     } else {
-      Scaffold
-          .of(context)
+      Scaffold.of(context)
           .showSnackBar(SnackBar(content: Text("Could not launch $url")));
     }
   }
@@ -117,8 +116,7 @@ class ArticlePageState extends State<ArticlePage> {
                   ? IconButton(
                       icon: new Icon(Icons.refresh),
                       //color: Colors.black87,
-                      onPressed: () => ArticleBlocProvider
-                          .of(context)
+                      onPressed: () => ArticleBlocProvider.of(context)
                           .getArticles(refresh: true),
                     )
                   : Container(),
@@ -196,18 +194,26 @@ class ArticlePageState extends State<ArticlePage> {
                   ),
                 ),
                 Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.all(10.0),
-                    child: new LayoutBuilder(builder:
-                        (BuildContext context, BoxConstraints constraints) {
-                      return new Text(
-                        widget.article.description,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 18.0, color: Colors.black54),
-                        maxLines: (constraints.maxHeight / 18.0).floor() - 1,
-                      );
-                    }),
-                  ),
+                  child: widget.article.description != null &&
+                          widget.article.description.trim() != ""
+                      ? Padding(
+                          padding: EdgeInsets.all(10.0),
+                          child: LayoutBuilder(builder: (BuildContext context,
+                              BoxConstraints constraints) {
+                            var maxLines =
+                                ((constraints.maxHeight / 18.0).floor() - 1);
+                            return maxLines > 0
+                                ? Text(
+                                    widget.article.description,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        fontSize: 18.0, color: Colors.black54),
+                                    maxLines: maxLines,
+                                  )
+                                : Container();
+                          }),
+                        )
+                      : Container(),
                 ),
                 Row(
                   mainAxisSize: MainAxisSize.max,
