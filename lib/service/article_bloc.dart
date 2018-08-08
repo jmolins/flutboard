@@ -96,12 +96,15 @@ class ArticleBloc {
   /// Loads active sources from localstorage
   void loadSources() {
     String sources = prefs.getString(_kSourcesKey);
-    if (sources == null) {
-      activeSources = ['cnn', 'bbc-news'];
-      saveSources();
-      return;
+    if (sources != null) {
+      activeSources = json.decode(sources).cast<String>();
+      if (activeSources.isNotEmpty) {
+        return;
+      }
     }
-    activeSources = json.decode(sources).cast<String>();
+    // Getting here means we were not able to get valid sources
+    activeSources = ['cnn', 'bbc-news'];
+    saveSources();
     return;
   }
 
