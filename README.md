@@ -12,5 +12,10 @@ Request an API KEY in https://newsapi.org
 
 Set the key in "keys.dart" file.
 
+### Release only:
+
+Since the build.gradle is now configured to sign the release apk using a production certificate, you need to add a keys.properties file as explained in [flutter.io](https://flutter.io/android-release/).
+
+
 ![GifSample](https://github.com/jmolins/flutboard/blob/master/art/flutboard.gif?raw=true)
 
