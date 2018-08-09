@@ -103,7 +103,7 @@ class AboutPage extends StatelessWidget {
                     "Disclaimer: FlutBoard is based on the idea developed by FlipBoard of browsing news "
                         "by flipping through pages. The app has been built with an educational "
                         "purpose using the Flutter cross platform SDK from Google. "
-                        "Its full souce code can be found at: 'https://github.com/jmolins/flutboard'.",
+                        "Its full source code can be found at: 'https://github.com/jmolins/flutboard'.",
                     style: TextStyle(fontSize: 14.0),
                   ),
                 ),
