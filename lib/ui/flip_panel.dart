@@ -1,3 +1,11 @@
+// The FlipPanel class is an evolution of the FlipPanel conceived and implemented
+// by Hunghd for the flip_panel package whose source code you can find here:
+//  https://github.com/hnvn/flutter_flip_panel
+//
+// It has been largely modified to adapt it to the manual gestures but the
+// build methods mostly remain as in the original source, though slightly
+// reduced.
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';

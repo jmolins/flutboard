@@ -5,7 +5,7 @@ import 'package:flutboard/service/api.dart';
 import 'package:flutboard/service/article_bloc.dart';
 import 'package:flutboard/service/article_bloc_provider.dart';
 import 'package:flutboard/ui/article_page.dart';
-import 'package:flutboard/ui/my_flip_panel.dart';
+import 'package:flutboard/ui/flip_panel.dart';
 import 'package:flutter/material.dart';
 
 Future main() async {
