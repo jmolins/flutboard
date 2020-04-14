@@ -164,13 +164,13 @@ class _FlipPanelState<T> extends State<FlipPanel>
         widgets.add(_buildFirstWidget(items[0]));
         widgets.addAll(items
             .skip(1)
-            .map((item) => widget.itemBuilder(context, item, FlipBack, _height))
+            .map((item) => widget.itemBuilder(context, item, flipBack, _height))
             .toList());
         _upperChild1 = makeUpperClip(widgets[0]);
         _lowerChild1 = makeLowerClip(widgets[0]);
       } else {
         widgets.addAll(items
-            .map((item) => widget.itemBuilder(context, item, FlipBack, _height))
+            .map((item) => widget.itemBuilder(context, item, flipBack, _height))
             .toList());
       }
       _availableItems += items.length;
@@ -231,7 +231,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
     );
   }
 
-  void FlipBack({bool backToTop = false}) {
+  void flipBack({bool backToTop = false}) {
     if (_currentIndex == 0) return;
     _running = true;
     _currentChild = null;

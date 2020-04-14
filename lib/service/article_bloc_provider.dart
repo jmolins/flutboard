@@ -13,9 +13,7 @@ class ArticleBlocProvider extends StatefulWidget {
   _ArticleBlocProviderState createState() => _ArticleBlocProviderState();
 
   static ArticleBloc of(BuildContext context) {
-    return (context.inheritFromWidgetOfExactType(_ArticleBlocProvider)
-            as _ArticleBlocProvider)
-        .bloc;
+    return context.dependOnInheritedWidgetOfExactType<_ArticleBlocProvider>().bloc;
   }
 }
 

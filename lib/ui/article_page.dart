@@ -58,25 +58,23 @@ class ArticlePageState extends State<ArticlePage> {
     Icon _getMenuIcon(TargetPlatform platform) {
       assert(platform != null);
       switch (platform) {
-        case TargetPlatform.android:
-        case TargetPlatform.fuchsia:
-          return const Icon(Icons.more_vert);
         case TargetPlatform.iOS:
+        case TargetPlatform.macOS:
           return const Icon(Icons.more_horiz);
+        default:
+          return const Icon(Icons.more_vert);
       }
-      return null;
     }
 
     Icon _getBackIcon(TargetPlatform platform) {
       assert(platform != null);
       switch (platform) {
-        case TargetPlatform.android:
-        case TargetPlatform.fuchsia:
-          return const Icon(Icons.arrow_back);
         case TargetPlatform.iOS:
+        case TargetPlatform.macOS:
           return const Icon(Icons.arrow_back_ios);
+        default:
+          return const Icon(Icons.arrow_back);
       }
-      return null;
     }
 
     return Container(
