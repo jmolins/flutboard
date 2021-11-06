@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutboard/model/article.dart';
 import 'package:flutboard/model/source.dart';
 import 'package:flutboard/service/api.dart';
-import 'package:meta/meta.dart';
 
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,14 +19,14 @@ class ArticleBloc {
   // Assume there is at least one article in the server
   int _totalItemsForRequestedSources = 1;
 
-  SharedPreferences prefs;
-  List<String> activeSources;
-  String _activeSourcesStr;
+  late SharedPreferences prefs;
+  List<String>? activeSources;
+  late String _activeSourcesStr;
 
-  final _articlesController = PublishSubject<List<Article>>();
-  final _sourcesController = PublishSubject<List<Source>>();
+  final _articlesController = PublishSubject<List<Article>?>();
+  final _sourcesController = PublishSubject<List<Source>?>();
 
-  ArticleBloc({@required this.api});
+  ArticleBloc({required this.api});
 
   Future<void> init() async {
     prefs = await SharedPreferences.getInstance();
@@ -45,13 +44,13 @@ class ArticleBloc {
     if (activeSources == null) {
       await init();
     }
-    List<Article> articles;
+    List<Article>? articles;
     if (refresh) {
       // Send a null list prior to the real list to allow the flip panel to reset
       // and show the refresh indicator
       _articlesController.add(null);
       articles = await _getArticles();
-      _articlesController.add(articles);
+      _articlesController.add(articles!);
       _nextPage = 2;
     } else {
       if (_totalItemsForRequestedSources > (_nextPage - 1) * _pageSize) {
@@ -70,19 +69,16 @@ class ArticleBloc {
   }
 
   // Outputs
-  Stream<List<Article>> get articles => _articlesController.stream;
+  Stream<List<Article>?> get articles => _articlesController.stream;
 
-  Stream<List<Source>> get allSources => _sourcesController.stream;
+  Stream<List<Source>?> get allSources => _sourcesController.stream;
 
-  Future<List<Article>> _getArticles(
-      {int page = 1, int pageSize = _pageSize}) async {
-    String jsonString = await api.getArticles(
-        sources: _activeSourcesStr, page: page, pageSize: pageSize);
+  Future<List<Article>?> _getArticles({int page = 1, int pageSize = _pageSize}) async {
+    String? jsonString =
+        await api.getArticles(sources: _activeSourcesStr, page: page, pageSize: pageSize);
     if (jsonString != null) {
       var data = json.decode(jsonString);
-      if (data != null &&
-          data["totalResults"] != null &&
-          data["articles"] != null) {
+      if (data != null && data["totalResults"] != null && data["articles"] != null) {
         _totalItemsForRequestedSources = data["totalResults"];
         List<Article> articles = (data["articles"] as List<dynamic>)
             .map((article) => Article.fromJson(article))
@@ -95,10 +91,10 @@ class ArticleBloc {
 
   /// Loads active sources from localstorage
   void loadSources() {
-    String sources = prefs.getString(_kSourcesKey);
+    String? sources = prefs.getString(_kSourcesKey);
     if (sources != null) {
       activeSources = json.decode(sources).cast<String>();
-      if (activeSources.isNotEmpty) {
+      if (activeSources!.isNotEmpty) {
         return;
       }
     }
@@ -115,12 +111,12 @@ class ArticleBloc {
 
   /// Converts the active sources list to a string that will be used in the url
   /// to fetch articles from the server
-  /// TODO: this should be moved to the api
+  /// TOD: this should be moved to the api
   String sourcesListToUrlString() {
     String str = '';
-    activeSources.forEach((source) {
+    for (var source in activeSources!) {
       str += "$source,";
-    });
+    }
     if (str.endsWith(',')) {
       str = str.substring(0, str.length - 1);
     }
@@ -128,11 +124,11 @@ class ArticleBloc {
   }
 
   /// Updates the active sources with the passed source id
-  void activateSource({String id, bool activate}) {
-    if (!activeSources.contains(id) && activate) {
-      activeSources.add(id);
-    } else if (activeSources.contains(id) && !activate) {
-      activeSources.remove(id);
+  void activateSource({required String id, required bool activate}) {
+    if (!activeSources!.contains(id) && activate) {
+      activeSources!.add(id);
+    } else if (activeSources!.contains(id) && !activate) {
+      activeSources!.remove(id);
     }
     saveSources();
     _activeSourcesStr = sourcesListToUrlString();

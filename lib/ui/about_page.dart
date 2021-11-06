@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-typedef void FlipBack({bool backToTop});
+typedef FlipBack = void Function({bool backToTop});
 
 class AboutPage extends StatelessWidget {
-  static const String NEWSAPI_URL = "https://newsapi.org";
+  static const String newsapiUrl = "https://newsapi.org";
 
-  AboutPage();
+  const AboutPage({Key? key}) : super(key: key);
 
   _launchNewsApiURL() async {
-    if (await canLaunch(NEWSAPI_URL)) {
-      await launch(NEWSAPI_URL);
+    if (await canLaunch(newsapiUrl)) {
+      await launch(newsapiUrl);
     }
   }
 
@@ -23,7 +23,7 @@ class AboutPage extends StatelessWidget {
         ),
         body: ListView(
           children: <Widget>[
-            Center(
+            const Center(
               child: Padding(
                 padding: EdgeInsets.all(5.0),
                 child: Text(
@@ -34,7 +34,7 @@ class AboutPage extends StatelessWidget {
             ),
             Center(
               child: Padding(
-                padding: EdgeInsets.only(top: 10.0, bottom: 40.0),
+                padding: const EdgeInsets.only(top: 10.0, bottom: 40.0),
                 child: SizedBox(
                   height: 100.0,
                   width: 100.0,
@@ -42,7 +42,7 @@ class AboutPage extends StatelessWidget {
                 ),
               ),
             ),
-            Center(
+            const Center(
               child: Padding(
                 padding: EdgeInsets.only(bottom: 15.0),
                 child: Text(
@@ -51,7 +51,7 @@ class AboutPage extends StatelessWidget {
                 ),
               ),
             ),
-            Center(
+            const Center(
               child: Padding(
                 padding: EdgeInsets.only(top: 10.00),
                 child: Text(
@@ -60,13 +60,13 @@ class AboutPage extends StatelessWidget {
                 ),
               ),
             ),
-            Center(
+            const Center(
               child: Text(
                 "@jmolins",
                 style: TextStyle(fontSize: 14.0),
               ),
             ),
-            Center(
+            const Center(
               child: Padding(
                 padding: EdgeInsets.only(top: 25.00, bottom: 5.0),
                 child: Text(
@@ -75,7 +75,7 @@ class AboutPage extends StatelessWidget {
                 ),
               ),
             ),
-            Center(
+            const Center(
               child: Text(
                 "https://github.com/jmolins/flutboard",
                 style: TextStyle(fontSize: 14.0),
@@ -83,27 +83,26 @@ class AboutPage extends StatelessWidget {
             ),
             Center(
               child: Padding(
-                padding: EdgeInsets.only(top: 30.0),
+                padding: const EdgeInsets.only(top: 30.0),
                 child: GestureDetector(
                   onTap: _launchNewsApiURL,
-                  child: Text(
+                  child: const Text(
                     "Powered by News API",
-                    style: TextStyle(
-                        fontSize: 14.0, decoration: TextDecoration.underline),
+                    style: TextStyle(fontSize: 14.0, decoration: TextDecoration.underline),
                   ),
                 ),
               ),
             ),
             Center(
               child: Padding(
-                padding: EdgeInsets.all(30.0),
+                padding: const EdgeInsets.all(30.0),
                 child: GestureDetector(
                   onTap: _launchNewsApiURL,
-                  child: Text(
+                  child: const Text(
                     "Disclaimer: FlutBoard is based on the idea developed by FlipBoard of browsing news "
-                        "by flipping through pages. The app has been built with an educational "
-                        "purpose using the Flutter cross platform SDK from Google. "
-                        "Its full source code can be found at: 'https://github.com/jmolins/flutboard'.",
+                    "by flipping through pages. The app has been built with an educational "
+                    "purpose using the Flutter cross platform SDK from Google. "
+                    "Its full source code can be found at: 'https://github.com/jmolins/flutboard'.",
                     style: TextStyle(fontSize: 14.0),
                   ),
                 ),

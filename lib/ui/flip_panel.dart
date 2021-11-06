@@ -8,14 +8,15 @@
 
 import 'dart:async';
 
+import 'package:flutboard/ui/article_page.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-typedef Widget ItemBuilder<T>(BuildContext, T, VoidCallback, double);
+typedef ItemBuilder<T> = Widget Function(BuildContext, T, FlipBack?, double);
 
 // Callback that allows to request for more items to the server or to refresh
 // the list if refresh is true.
-typedef void GetItems({bool refresh});
+typedef GetItems = void Function({bool refresh});
 
 enum FlipDirection { up, down, none }
 
@@ -27,44 +28,39 @@ class FlipPanel<T> extends StatefulWidget {
   final ItemBuilder<T> itemBuilder;
   final Duration duration;
   final double height;
-  final Stream<List<T>> itemStream;
+  final Stream<List<T>?> itemStream;
   final GetItems getItemsCallback;
 
-  FlipPanel({
-    Key key,
-    @required this.itemBuilder,
-    @required this.itemStream,
-    @required this.getItemsCallback,
-    @required this.height,
+  const FlipPanel({
+    Key? key,
+    required this.itemBuilder,
+    required this.itemStream,
+    required this.getItemsCallback,
+    required this.height,
     this.duration = const Duration(milliseconds: 100),
-  })  : assert(itemBuilder != null),
-        assert(itemStream != null),
-        assert(getItemsCallback != null),
-        assert(height != null),
-        super(key: key);
+  }) : super(key: key);
 
   @override
   _FlipPanelState<T> createState() => _FlipPanelState<T>();
 }
 
-class _FlipPanelState<T> extends State<FlipPanel>
-    with TickerProviderStateMixin {
-  AnimationController _controller;
-  Animation _animation;
-  int _currentIndex;
-  bool _isReversePhase;
-  bool _running;
+class _FlipPanelState<T> extends State<FlipPanel> with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation _animation;
+  int _currentIndex = 0;
+  bool _isReversePhase = false;
+  bool _running = false;
   final _perspective = 0.0003;
   final _zeroAngle =
       0.0001; // There's something wrong in the perspective transform, I use a very small value instead of zero to temporarily get it around.
 
-  double _height;
+  late double _height;
 
-  FlipDirection _direction;
+  FlipDirection _direction = FlipDirection.none;
 
-  List<Widget> widgets;
+  List<Widget>? widgets;
 
-  StreamSubscription<List<T>> _subscription;
+  late StreamSubscription<List<dynamic>?> _subscription;
 
   // Items that have been received through the stream.
   // This is used to know if we need to request more items from the server
@@ -73,13 +69,13 @@ class _FlipPanelState<T> extends State<FlipPanel>
 
   // Number of items between the _currentIndex and _availableItemns below which
   // we launch a request to server for more items (next page).
-  int _updateThreshold = 5;
+  final _updateThreshold = 5;
 
   bool _waitingForRefresh = false;
 
-  Widget _prevChild, _currentChild, _nextChild;
-  Widget _upperChild1, _upperChild2;
-  Widget _lowerChild1, _lowerChild2;
+  Widget? _prevChild, _currentChild, _nextChild;
+  Widget? _upperChild1, _upperChild2;
+  Widget? _lowerChild1, _lowerChild2;
 
   double _dragExtent = 0.0;
   bool _dragging = false;
@@ -113,44 +109,40 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _direction = FlipDirection.none;
     _height = widget.height;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {});
+    WidgetsBinding.instance!.addPostFrameCallback((_) {});
 
-    _controller =
-        new AnimationController(duration: widget.duration, vsync: this)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed && !_dragging) {
-              _isReversePhase = true;
-              _controller.reverse();
-            }
-            if (status == AnimationStatus.dismissed) {
-              //_currentValue = _nextValue;
-              _running = false;
-              _currentIndex = _lastFlip == LastFlip.next &&
-                      _currentIndex < widgets.length - 1
-                  ? _currentIndex + 1
-                  : _lastFlip == LastFlip.previous && _currentIndex > 0
-                      ? _currentIndex - 1
-                      : _currentIndex;
-              // Avoid going beyond max. items of widgets list
-              if (_lastFlip == LastFlip.next &&
-                  _currentIndex == _availableItems - _updateThreshold) {
-                widget.getItemsCallback();
-              }
-            }
-          })
-          ..addListener(() {
-            setState(() {
-              _running = true;
-            });
-          });
-    _animation =
-        Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
+    _controller = AnimationController(duration: widget.duration, vsync: this)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && !_dragging) {
+          _isReversePhase = true;
+          _controller.reverse();
+        }
+        if (status == AnimationStatus.dismissed) {
+          //_currentValue = _nextValue;
+          _running = false;
+          _currentIndex = _lastFlip == LastFlip.next && _currentIndex < widgets!.length - 1
+              ? _currentIndex + 1
+              : _lastFlip == LastFlip.previous && _currentIndex > 0
+                  ? _currentIndex - 1
+                  : _currentIndex;
+          // Avoid going beyond max. items of widgets list
+          if (_lastFlip == LastFlip.next && _currentIndex == _availableItems - _updateThreshold) {
+            widget.getItemsCallback();
+          }
+        }
+      })
+      ..addListener(() {
+        setState(() {
+          _running = true;
+        });
+      });
+    _animation = Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
 
     _subscription = widget.itemStream.distinct().listen((items) {
       // A null items list is sent to indicate that a refresh
       // request has been sent to the server. It will be used to show a refresh
       // indicator
-      if (items == null || items.length == 0) {
+      if (items == null || items.isEmpty) {
         widgets = null;
         _availableItems = 0;
         _currentIndex = 0;
@@ -161,17 +153,16 @@ class _FlipPanelState<T> extends State<FlipPanel>
       _waitingForRefresh = false;
       if (_availableItems == 0) {
         widgets = [];
-        widgets.add(_buildFirstWidget(items[0]));
-        widgets.addAll(items
+        widgets!.add(_buildFirstWidget(items[0]));
+        widgets!.addAll(items
             .skip(1)
             .map((item) => widget.itemBuilder(context, item, flipBack, _height))
             .toList());
-        _upperChild1 = makeUpperClip(widgets[0]);
-        _lowerChild1 = makeLowerClip(widgets[0]);
+        _upperChild1 = makeUpperClip(widgets![0]);
+        _lowerChild1 = makeLowerClip(widgets![0]);
       } else {
-        widgets.addAll(items
-            .map((item) => widget.itemBuilder(context, item, flipBack, _height))
-            .toList());
+        widgets!.addAll(
+            items.map((item) => widget.itemBuilder(context, item, flipBack, _height)).toList());
       }
       _availableItems += items.length;
       setState(() {});
@@ -181,7 +172,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
   @override
   void dispose() {
     _controller.dispose();
-    if (_subscription != null) _subscription.cancel();
+    _subscription.cancel();
     super.dispose();
   }
 
@@ -200,7 +191,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
           color: Colors.white,
           height: _height,
           width: MediaQuery.of(context).size.width,
-          child: Center(
+          child: const Center(
             child: CircularProgressIndicator(),
           ),
         );
@@ -239,13 +230,13 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _direction = FlipDirection.down;
     _lastFlip = LastFlip.previous;
     if (backToTop) {
-      _currentChild = widgets[_currentIndex];
-      _prevChild = widgets[0];
+      _currentChild = widgets![_currentIndex];
+      _prevChild = widgets![0];
       _currentIndex = 0;
-      _upperChild1 = makeUpperClip(_currentChild);
-      _lowerChild1 = makeLowerClip(_currentChild);
-      _upperChild2 = makeUpperClip(_prevChild);
-      _lowerChild2 = makeLowerClip(_prevChild);
+      _upperChild1 = makeUpperClip(_currentChild!);
+      _lowerChild1 = makeLowerClip(_currentChild!);
+      _upperChild2 = makeUpperClip(_prevChild!);
+      _lowerChild2 = makeLowerClip(_prevChild!);
     }
     _controller.animateTo(1.0);
   }
@@ -253,29 +244,29 @@ class _FlipPanelState<T> extends State<FlipPanel>
   void _buildChildWidgetsIfNeed(BuildContext context) {
     if (_running) {
       if (_direction == FlipDirection.up) {
-        if (_currentChild == null && _currentIndex < widgets.length - 1) {
-          _currentChild = widgets[_currentIndex];
-          _nextChild = widgets[_currentIndex + 1];
-          _upperChild1 = makeUpperClip(_currentChild);
-          _lowerChild1 = makeLowerClip(_currentChild);
-          _upperChild2 = makeUpperClip(_nextChild);
-          _lowerChild2 = makeLowerClip(_nextChild);
+        if (_currentChild == null && _currentIndex < widgets!.length - 1) {
+          _currentChild = widgets![_currentIndex];
+          _nextChild = widgets![_currentIndex + 1];
+          _upperChild1 = makeUpperClip(_currentChild!);
+          _lowerChild1 = makeLowerClip(_currentChild!);
+          _upperChild2 = makeUpperClip(_nextChild!);
+          _lowerChild2 = makeLowerClip(_nextChild!);
         }
       }
       if (_direction == FlipDirection.down) {
         if (_currentChild == null && _currentIndex > 0) {
-          _currentChild = widgets[_currentIndex];
-          _prevChild = widgets[_currentIndex - 1];
-          _upperChild1 = makeUpperClip(_currentChild);
-          _lowerChild1 = makeLowerClip(_currentChild);
-          _upperChild2 = makeUpperClip(_prevChild);
-          _lowerChild2 = makeLowerClip(_prevChild);
+          _currentChild = widgets![_currentIndex];
+          _prevChild = widgets![_currentIndex - 1];
+          _upperChild1 = makeUpperClip(_currentChild!);
+          _lowerChild1 = makeLowerClip(_currentChild!);
+          _upperChild2 = makeUpperClip(_prevChild!);
+          _lowerChild2 = makeLowerClip(_prevChild!);
         }
       }
     } else {
-      _currentChild = widgets[_currentIndex];
-      _upperChild1 = makeUpperClip(_currentChild);
-      _lowerChild1 = makeLowerClip(_currentChild);
+      _currentChild = widgets![_currentIndex];
+      _upperChild1 = makeUpperClip(_currentChild!);
+      _lowerChild1 = makeLowerClip(_currentChild!);
     }
   }
 
@@ -285,19 +276,18 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _direction = FlipDirection.none;
     _dragExtent = _controller.value * _dragExtent.sign;
 
-    double _halfFlipPanel = context.size.height / 2;
-    RenderBox referenceBox = context.findRenderObject();
+    double _halfFlipPanel = context.size!.height / 2;
+    RenderBox referenceBox = context.findRenderObject() as RenderBox;
     Offset localPosition = referenceBox.globalToLocal(details.globalPosition);
-    _flipExtent = (localPosition.dy - _halfFlipPanel)
-        .abs()
-        .clamp(_halfFlipPanel / 2, double.infinity);
+    _flipExtent =
+        (localPosition.dy - _halfFlipPanel).abs().clamp(_halfFlipPanel / 2, double.infinity);
     if (_controller.isAnimating) {
       _controller.stop();
     }
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
-    final double delta = details.primaryDelta;
+    final double delta = details.primaryDelta!;
     _dragExtent += delta;
     setState(() {
       if (_direction == FlipDirection.none) {
@@ -311,16 +301,14 @@ class _FlipPanelState<T> extends State<FlipPanel>
       if (_direction == FlipDirection.down && _currentIndex == 0) {
         _dragExtent = 0.0;
       }
-      if (_direction == FlipDirection.up &&
-          _currentIndex == widgets.length - 1) {
+      if (_direction == FlipDirection.up && _currentIndex == widgets!.length - 1) {
         _dragExtent = 0.0;
         _shouldShowNoMoreItemsMessage = true;
       }
       if (_dragExtent.abs() < _flipExtent) {
         _controller.value = (_dragExtent / _flipExtent).abs();
       } else {
-        _controller.value =
-            (((_flipExtent * 2) - _dragExtent.abs()) / _flipExtent).abs();
+        _controller.value = (((_flipExtent * 2) - _dragExtent.abs()) / _flipExtent).abs();
       }
       _isReversePhase = (_dragExtent / _flipExtent).abs() > 1.0 ? true : false;
     });
@@ -337,7 +325,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
       return;
     }
 
-    final double velocity = details.primaryVelocity;
+    final double velocity = details.primaryVelocity!;
     final bool fast = velocity.abs() > _kFastThreshold;
 
     if (fast) {
@@ -346,12 +334,10 @@ class _FlipPanelState<T> extends State<FlipPanel>
       } else {
         _controller.animateTo(1.0);
       }
-      _lastFlip =
-          _direction == FlipDirection.up ? LastFlip.next : LastFlip.previous;
+      _lastFlip = _direction == FlipDirection.up ? LastFlip.next : LastFlip.previous;
     } else {
       if (_dragExtent.abs() > _flipExtent) {
-        _lastFlip =
-            _direction == FlipDirection.up ? LastFlip.next : LastFlip.previous;
+        _lastFlip = _direction == FlipDirection.up ? LastFlip.next : LastFlip.previous;
       } else {
         _lastFlip = LastFlip.none;
       }
@@ -489,11 +475,11 @@ class _FlipPanelState<T> extends State<FlipPanel>
             children: [
               Stack(
                 children: <Widget>[
-                  _upperChild1,
+                  _upperChild1!,
                   _waitingForRefresh
-                      ? Padding(
+                      ? const Padding(
                           padding: EdgeInsets.only(top: 100.0),
-                          child: Container(
+                          child: SizedBox(
                             width: double.infinity,
                             child: Center(child: RefreshProgressIndicator()),
                           ),
@@ -501,7 +487,7 @@ class _FlipPanelState<T> extends State<FlipPanel>
                       : Container(),
                 ],
               ),
-              _lowerChild1,
+              _lowerChild1!,
             ],
           );
 
@@ -514,8 +500,8 @@ class _FlipPanelState<T> extends State<FlipPanel>
   }
 
   void _showNoMoreItemsMessage() {
-    Scaffold.of(context).showSnackBar(
-      SnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
         content: Text("No more articles for selected sources"),
       ),
     );

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutboard/service/article_bloc.dart';
 
@@ -6,14 +5,13 @@ class ArticleBlocProvider extends StatefulWidget {
   final Widget child;
   final ArticleBloc bloc;
 
-  ArticleBlocProvider({Key key, @required this.child, @required this.bloc})
-      : super(key: key);
+  const ArticleBlocProvider({Key? key, required this.child, required this.bloc}) : super(key: key);
 
   @override
   _ArticleBlocProviderState createState() => _ArticleBlocProviderState();
 
   static ArticleBloc of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<_ArticleBlocProvider>().bloc;
+    return context.dependOnInheritedWidgetOfExactType<_ArticleBlocProvider>()!.bloc;
   }
 }
 
@@ -33,10 +31,10 @@ class _ArticleBlocProviderState extends State<ArticleBlocProvider> {
 class _ArticleBlocProvider extends InheritedWidget {
   final ArticleBloc bloc;
 
-  _ArticleBlocProvider({
-    Key key,
-    @required this.bloc,
-    @required Widget child,
+  const _ArticleBlocProvider({
+    Key? key,
+    required this.bloc,
+    required Widget child,
   }) : super(key: key, child: child);
 
   @override

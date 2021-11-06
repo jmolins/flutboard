@@ -1,10 +1,10 @@
 class Article {
-  String source;
-  String author;
-  String title;
-  String description;
-  String url;
-  String urlToImage;
+  String? source;
+  String? author;
+  String? title;
+  String? description;
+  String? url;
+  String? urlToImage;
 
   Article({
     this.source,
@@ -21,6 +21,9 @@ class Article {
     title = map['title'];
     description = map['description'];
     url = map['url'];
-    urlToImage = map['urlToImage'];
+    // Some articles come with 'null' as a string
+    String tempUrlToImage = map['urlToImage'] != 'null' ? map['urlToImage'] : null;
+    // Used to correct some urls coming with 4 backslahes
+    urlToImage = tempUrlToImage.replaceAll('////', '//');
   }
 }

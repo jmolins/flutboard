@@ -8,16 +8,20 @@ import 'package:flutboard/ui/article_page.dart';
 import 'package:flutboard/ui/flip_panel.dart';
 import 'package:flutter/material.dart';
 
+import 'model/article.dart';
+
 Future main() async {
-  runApp(new MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-    Api api = new Api();
+    Api api = Api();
     ArticleBloc bloc = ArticleBloc(api: api);
 
     bloc.getArticles();
@@ -27,13 +31,15 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'FlutBoard',
         theme: _buildTheme(),
-        home: HomePage(),
+        home: const HomePage(),
       ),
     );
   }
 }
 
 class HomePage extends StatelessWidget {
+  const HomePage({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     // Calculate height of the page before applying the SafeArea since it removes
@@ -46,10 +52,10 @@ class HomePage extends StatelessWidget {
       // This Scaffold is used to display the FlipPane SnackBar. Later,
       // each article page will have its own Scaffold
       child: Scaffold(
-        body: FlipPanel(
+        body: FlipPanel<Article>(
           itemStream: ArticleBlocProvider.of(context).articles,
-          itemBuilder: (context, article, flipBack, height) =>
-              ArticlePage(article, flipBack, height),
+          itemBuilder: <Article>(context, article, flipBack, height) =>
+              ArticlePage(article: article, flipBack: flipBack, height: height),
           getItemsCallback: ArticleBlocProvider.of(context).getArticles,
           height: height,
         ),
@@ -61,14 +67,12 @@ class HomePage extends StatelessWidget {
 ThemeData _buildTheme() {
   final ThemeData base = ThemeData.light();
   return base.copyWith(
-    accentColor: Colors.black87,
     primaryColor: Colors.white,
     scaffoldBackgroundColor: Colors.white,
     primaryIconTheme: base.iconTheme.copyWith(color: Colors.black87),
     iconTheme: base.iconTheme.copyWith(color: Colors.black87),
     textTheme: _buildShrineTextTheme(base.textTheme),
     primaryTextTheme: _buildShrineTextTheme(base.primaryTextTheme),
-    accentTextTheme: _buildShrineTextTheme(base.accentTextTheme),
   );
 }
 
